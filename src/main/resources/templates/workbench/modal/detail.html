@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <base th:href="${#request.getContextPath()}+'/'">
+</head>
+<body>
+
+<!-- 备注 -->
+<div th:fragment="remark">
+    <div class="page-header">
+        <h4>备注</h4>
+    </div>
+
+    <!-- 备注1 -->
+    <div class="remarkDiv" style="height: 60px;" @mouseenter="remarkDivMouseenter($event)" @mouseleave="remarkDivMouseleave($event)" v-for="(item,i) in remarkList">
+        <img :title="item.createby" src="image/user-thumbnail.png" style="width: 30px; height:30px;">
+        <div style="position: relative; top: -40px; left: 40px;" >
+            <h5>{{item.notecontent}}</h5>
+            <font color="gray">{{remarkTitle}}</font>
+            <font color="gray">-</font>
+            <b>{{remarkFor}}</b>
+            <small style="color: gray;" v-if="item.editflag == '0'"> {{item.createtime}} 由{{item.createby}}</small>
+            <small style="color: gray;" v-if="item.editflag == '1'"> {{item.edittime}} 由{{item.editby}}</small>
+            <div style="position: relative; left: 500px; top: -30px; height: 30px; width: 100px; display: none;">
+                <a class="myHref" @mouseenter="hrefMouseenter($event)" @mouseleave="hrefMouseleave($event)" @click="openEditRemarkModal(item.id)">
+                    <span class="glyphicon glyphicon-edit" style="font-size: 20px; color: #E6E6E6;"></span>
+                </a>
+                &nbsp;&nbsp;&nbsp;&nbsp;
+                <a class="myHref" @mouseenter="hrefMouseenter($event)" @mouseleave="hrefMouseleave($event)" @click="deleteRemark(item.id)">
+                    <span class="glyphicon glyphicon-remove" style="font-size: 20px; color: #E6E6E6;"></span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div style="background-color: #E6E6E6; width: 870px; height: 90px;" :style="{height : remarkHeight}">
+        <form role="form" style="position: relative;top: 10px; left: 10px;">
+            <textarea class="form-control" style="width: 850px; resize : none;" rows="2"  placeholder="添加备注..." v-model="newRemark" @click="addRemark"></textarea>
+            <p style="position: relative;left: 737px; top: 10px;" v-show="remarkBtn">
+                <button type="button" class="btn btn-default" @click="cancelSave">取消</button>
+                <button type="button" class="btn btn-primary" @click="saveRemark">保存</button>
+            </p>
+        </form>
+    </div>
+</div>
+
+<!-- 交易 -->
+<div th:fragment="tran-simple-table">
+    <div style="position: relative; top: 20px; left: 40px;">
+        <div class="page-header">
+            <h4>交易</h4>
+        </div>
+        <div style="position: relative;top: 0px;">
+            <table class="table table-hover" style="width: 900px;">
+                <thead>
+                <tr style="color: #B3B3B3;">
+                    <td>名称</td>
+                    <td>金额</td>
+                    <td>阶段</td>
+                    <td>可能性</td>
+                    <td>预计成交日期</td>
+                    <td>类型</td>
+                    <td></td>
+                </tr>
+                </thead>
+                <tbody>
+                <tr v-for="(item,i) in tranList">
+                    <td><a @click="openTranDetail(item.id)" style="text-decoration: none;">{{item.name}}</a></td>
+                    <td>{{item.money}}</td>
+                    <td>{{item.stage}}</td>
+                    <td>50</td>
+                    <td>{{item.expecteddate}}</td>
+                    <td>{{item.type}}</td>
+                    <td><a @click="deleteTran(item.id)" style="text-decoration: none;"><span class="glyphicon glyphicon-remove"></span>删除</a></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div>
+            <a @click="openCreateTran" style="text-decoration: none;"><span class="glyphicon glyphicon-plus"></span>新建交易</a>
+        </div>
+    </div>
+</div>
+
+<!-- 联系人详情 -->
+<div id="contacts-detail" v-show="seen" th:fragment="contacts-detail">
+    <!-- 返回按钮 -->
+    <div style="position: relative; top: 35px; left: 10px;">
+        <a @click="returnMain"><span class="glyphicon glyphicon-arrow-left" style="font-size: 20px; color: #DDDDDD"></span></a>
+    </div>
+
+    <!-- 大标题 -->
+    <div style="position: relative; left: 40px; top: -30px;">
+        <div class="page-header">
+            <h3>{{contacts.fullname + contacts.appellation}} <small> - {{contacts.customerid}}</small></h3>
+        </div>
+        <div style="position: relative; height: 50px; width: 500px;  top: -72px; left: 700px;">
+            <button type="button" class="btn btn-default" @click="openEditModal"><span class="glyphicon glyphicon-edit"></span> 编辑</button>
+            <button type="button" class="btn btn-danger" @click="deleteItem"><span class="glyphicon glyphicon-minus"></span> 删除</button>
+        </div>
+    </div>
+
+    <!-- 详细信息 -->
+    <div style="position: relative; top: -70px;">
+        <div style="position: relative; left: 40px; height: 30px;">
+            <div style="width: 300px; color: gray;">所有者</div>
+            <div style="width: 300px;position: relative; left: 200px; top: -20px;"><b>{{contacts.owner}}</b></div>
+            <div style="width: 300px;position: absolute; left: 450px; top: 0; color: gray;">来源</div>
+            <div style="width: 300px;position: absolute; left: 650px; top: 0;"><b>{{contacts.source}}</b></div>
+            <div style="height: 1px; width: 400px; background: #D5D5D5; position: absolute; top: 20px;"></div>
+            <div style="height: 1px; width: 400px; background: #D5D5D5; position: absolute; top: 20px; left: 450px;"></div>
+        </div>
+        <div style="position: relative; left: 40px; height: 30px; top: 10px;">
+            <div style="width: 300px; color: gray;">客户名称</div>
+            <div style="width: 300px;position: relative; left: 200px; top: -20px;"><b>{{contacts.customerid}}</b></div>
+            <div style="width: 300px;position: absolute; left: 450px; top: 0; color: gray;">姓名</div>
+            <div style="width: 300px;position: absolute; left: 650px; top: 0;"><b>{{contacts.fullname + contacts.appellation}}</b></div>
+            <div style="height: 1px; width: 400px; background: #D5D5D5; position: absolute; top: 20px;"></div>
+            <div style="height: 1px; width: 400px; background: #D5D5D5; position: absolute; top: 20px; left: 450px;"></div>
+        </div>
+        <div style="position: relative; left: 40px; height: 30px; top: 20px;">
+            <div style="width: 300px; color: gray;">邮箱</div>
+            <div style="width: 300px;position: relative; left: 200px; top: -20px;"><b>{{contacts.email}}</b></div>
+            <div style="width: 300px;position: absolute; left: 450px; top: 0; color: gray;">手机</div>
+            <div style="width: 300px;position: absolute; left: 650px; top: 0;"><b>{{contacts.mphone}}</b></div>
+            <div style="height: 1px; width: 400px; background: #D5D5D5; position: absolute; top: 20px;"></div>
+            <div style="height: 1px; width: 400px; background: #D5D5D5; position: absolute; top: 20px; left: 450px;"></div>
+        </div>
+        <div style="position: relative; left: 40px; height: 30px; top: 30px;">
+            <div style="width: 300px; color: gray;">职位</div>
+            <div style="width: 300px;position: relative; left: 200px; top: -20px;"><b>{{contacts.job}}</b></div>
+            <div style="width: 300px;position: absolute; left: 450px; top: 0; color: gray;">生日</div>
+            <div style="width: 300px;position: absolute; left: 650px; top: 0;"><b>{{contacts.birth}}</b></div>
+            <div style="height: 1px; width: 400px; background: #D5D5D5; position: absolute; top: 20px;"></div>
+            <div style="height: 1px; width: 400px; background: #D5D5D5; position: absolute; top: 20px; left: 450px;"></div>
+        </div>
+        <div style="position: relative; left: 40px; height: 30px; top: 40px;">
+            <div style="width: 300px; color: gray;">创建者</div>
+            <div style="width: 500px;position: relative; left: 200px; top: -20px;"><b>{{contacts.createby}}&nbsp;&nbsp;</b><small style="font-size: 10px; color: gray;">{{contacts.createtime}}</small></div>
+            <div style="height: 1px; width: 550px; background: #D5D5D5; position: absolute; top: 20px;"></div>
+        </div>
+        <div style="position: relative; left: 40px; height: 30px; top: 50px;">
+            <div style="width: 300px; color: gray;">修改者</div>
+            <div style="width: 500px;position: relative; left: 200px; top: -20px;"><b>{{contacts.editby}}&nbsp;&nbsp;</b><small style="font-size: 10px; color: gray;">{{contacts.edittime}}</small></div>
+            <div style="height: 1px; width: 550px; background: #D5D5D5; position: absolute; top: 20px;"></div>
+        </div>
+        <div style="position: relative; left: 40px; height: 30px; top: 60px;">
+            <div style="width: 300px; color: gray;">描述</div>
+            <div style="width: 630px;position: relative; left: 200px; top: -20px;">
+                <b>
+                    {{contacts.description}}
+                </b>
+            </div>
+            <div style="height: 1px; width: 850px; background: #D5D5D5; position: absolute; top: 20px;"></div>
+        </div>
+        <div style="position: relative; left: 40px; height: 30px; top: 70px;">
+            <div style="width: 300px; color: gray;">联系纪要</div>
+            <div style="width: 630px;position: relative; left: 200px; top: -20px;">
+                <b>
+                    {{contacts.contactsummary}}
+                </b>
+            </div>
+            <div style="height: 1px; width: 850px; background: #D5D5D5; position: absolute; top: 20px;"></div>
+        </div>
+        <div style="position: relative; left: 40px; height: 30px; top: 80px;">
+            <div style="width: 300px; color: gray;">下次联系时间</div>
+            <div style="width: 300px;position: relative; left: 200px; top: -20px;"><b>{{contacts.nextcontacttime}}</b></div>
+            <div style="height: 1px; width: 400px; background: #D5D5D5; position: absolute; top: 20px;"></div>
+        </div>
+        <div style="position: relative; left: 40px; height: 30px; top: 90px;">
+            <div style="width: 300px; color: gray;">详细地址</div>
+            <div style="width: 630px;position: relative; left: 200px; top: -20px;">
+                <b>
+                    {{contacts.address}}
+                </b>
+            </div>
+            <div style="height: 1px; width: 850px; background: #D5D5D5; position: absolute; top: 20px;"></div>
+        </div>
+    </div>
+    <!-- 备注 -->
+    <div style="position: relative; top: 20px; left: 40px;" th:insert="workbench/modal/detail :: remark">
+    </div>
+
+    <!-- 交易 -->
+    <div th:replace="workbench/modal/detail :: tran-simple-table">
+    </div>
+
+
+    <!-- 市场活动 -->
+    <div>
+        <div style="position: relative; top: 60px; left: 40px;">
+            <div class="page-header">
+                <h4>市场活动</h4>
+            </div>
+            <div style="position: relative;top: 0px;">
+                <table id="activityTable" class="table table-hover" style="width: 900px;">
+                    <thead>
+                    <tr style="color: #B3B3B3;">
+                        <td>名称</td>
+                        <td>开始日期</td>
+                        <td>结束日期</td>
+                        <td>所有者</td>
+                        <td></td>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr v-for="(item,i) in activityList">
+                        <td><a @click="openActivityDetail(item.cost)" style="text-decoration: none;">{{item.name}}</a></td>
+                        <td>{{item.startdate}}</td>
+                        <td>{{item.enddate}}</td>
+                        <td>{{item.owner}}</td>
+                        <td><a @click="deleteRelation(item.id)" style="text-decoration: none;"><span class="glyphicon glyphicon-remove"></span>解除关联</a></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div>
+                <a @click="createRelation" style="text-decoration: none;"><span class="glyphicon glyphicon-plus"></span>关联市场活动</a>
+            </div>
+        </div>
+    </div>
+
+
+    <div style="height: 200px;"></div>
+</div>
+
+<!-- 市场活动详情 -->
+<div id="activity-detail" v-show="seen" th:fragment="activity-detail">
+    <!-- 返回按钮 -->
+    <div style="position: relative; top: 35px; left: 10px;">
+        <a @click="returnMain"><span class="glyphicon glyphicon-arrow-left" style="font-size: 20px; color: #DDDDDD"></span></a>
+    </div>
+
+    <!-- 大标题 -->
+    <div style="position: relative; left: 40px; top: -30px;">
+        <div class="page-header">
+            <h3>市场活动-{{activity.name}} <small>{{activity.startdate}} ~ {{activity.enddate}}</small></h3>
+        </div>
+        <div style="position: relative; height: 50px; width: 250px;  top: -72px; left: 700px;">
+            <button type="button" class="btn btn-default" @click="openEditModal"><span class="glyphicon glyphicon-edit"></span> 编辑</button>
+            <button type="button" class="btn btn-danger" @click="deleteItem"><span class="glyphicon glyphicon-minus"></span> 删除</button>
+        </div>
+    </div>
+
+    <!-- 详细信息 -->
+    <div style="position: relative; top: -70px;">
+        <div style="position: relative; left: 40px; height: 30px;">
+            <div style="width: 300px; color: gray;">所有者</div>
+            <div style="width: 300px;position: relative; left: 200px; top: -20px;"><b>{{activity.owner}}</b></div>
+            <div style="width: 300px;position: absolute; left: 450px; top: 0; color: gray;">名称</div>
+            <div style="width: 300px;position: absolute; left: 650px; top: 0;"><b>{{activity.name}}</b></div>
+            <div style="height: 1px; width: 400px; background: #D5D5D5; position: absolute; top: 20px;"></div>
+            <div style="height: 1px; width: 400px; background: #D5D5D5; position: absolute; top: 20px; left: 450px;"></div>
+        </div>
+
+        <div style="position: relative; left: 40px; height: 30px; top: 10px;">
+            <div style="width: 300px; color: gray;">开始日期</div>
+            <div style="width: 300px;position: relative; left: 200px; top: -20px;"><b>{{activity.startdate}}</b></div>
+            <div style="width: 300px;position: absolute; left: 450px; top: 0; color: gray;">结束日期</div>
+            <div style="width: 300px;position: absolute; left: 650px; top: 0;"><b>{{activity.enddate}}</b></div>
+            <div style="height: 1px; width: 400px; background: #D5D5D5; position: absolute; top: 20px;"></div>
+            <div style="height: 1px; width: 400px; background: #D5D5D5; position: absolute; top: 20px; left: 450px;"></div>
+        </div>
+        <div style="position: relative; left: 40px; height: 30px; top: 20px;">
+            <div style="width: 300px; color: gray;">成本</div>
+            <div style="width: 300px;position: relative; left: 200px; top: -20px;"><b>{{activity.cost}}</b></div>
+            <div style="height: 1px; width: 400px; background: #D5D5D5; position: absolute; top: 20px;"></div>
+        </div>
+        <div style="position: relative; left: 40px; height: 30px; top: 30px;">
+            <div style="width: 300px; color: gray;">创建者</div>
+            <div style="width: 500px;position: relative; left: 200px; top: -20px;"><b>{{activity.createby}}</b>&nbsp;&nbsp;<small style="font-size: 10px; color: gray;">{{activity.createtime}}</small></div>
+            <div style="height: 1px; width: 550px; background: #D5D5D5; position: absolute; top: 20px;"></div>
+        </div>
+        <div style="position: relative; left: 40px; height: 30px; top: 40px;">
+            <div style="width: 300px; color: gray;">修改者</div>
+            <div style="width: 500px;position: relative; left: 200px; top: -20px;">
+                <b>{{activity.editby}}</b>&nbsp;&nbsp;<small style="font-size: 10px; color: gray;">{{activity.edittime}}</small>
+            </div>
+            <div style="height: 1px; width: 550px; background: #D5D5D5; position: absolute; top: 20px;"></div>
+        </div>
+        <div style="position: relative; left: 40px; height: 30px; top: 50px;">
+            <div style="width: 300px; color: gray;">描述</div>
+            <div style="width: 630px;position: relative; left: 200px; top: -20px;">
+                <b>
+                    {{activity.description}}
+                </b>
+            </div>
+            <div style="height: 1px; width: 850px; background: #D5D5D5; position: absolute; top: 20px;"></div>
+        </div>
+    </div>
+
+    <!-- 备注 -->
+    <div style="position: relative; top: 30px; left: 40px;" id="activity-remark" th:insert="workbench/modal/detail :: remark">
+    </div>
+    <div style="height: 200px;"></div>
+</div>
+
+<div id="tran-detail" v-show="seen" th:fragment="tran-detail">
+
+    <!-- 返回按钮 -->
+    <div style="position: relative; top: 35px; left: 10px;">
+        <a @click="returnMain"><span class="glyphicon glyphicon-arrow-left" style="font-size: 20px; color: #DDDDDD"></span></a>
+    </div>
+
+    <!-- 大标题 -->
+    <div style="position: relative; left: 40px; top: -30px;">
+        <div class="page-header">
+            <h3>{{tran.name}} <small>￥{{tran.money}}</small></h3>
+        </div>
+        <div style="position: relative; height: 50px; width: 250px;  top: -72px; left: 700px;">
+            <button type="button" class="btn btn-default" @click="openEditModal"><span class="glyphicon glyphicon-edit"></span> 编辑</button>
+            <button type="button" class="btn btn-danger" @click="deleteItem"><span class="glyphicon glyphicon-minus"></span> 删除</button>
+        </div>
+    </div>
+
+    <!-- 阶段状态 -->
+    <div style="position: relative; left: 40px; top: -50px;">
+        阶段&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        <b th:each="item:${#servletContext.getAttribute('dicMap')['stage']}">
+            <span class="glyphicon mystage"
+                  th:v-bind:class="|{'glyphicon-ok-circle' : tran.stage > '${item.value.text}', 'glyphicon-map-marker' : tran.stage == '${item.value.text}', 'glyphicon-record' : tran.stage < '${item.value.text}'}|"
+                  data-toggle="popover" data-placement="bottom"
+                  th:data-content="${item.value.text}"
+                  th:v-bind:style="|{color: tran.stage >= '${item.value.text}' ? '#90F790' : ''}|"></span>
+            -----------
+        </b>
+        <span class="closingDate">{{tran.expecteddate}}</span>
+    </div>
+
+    <!-- 详细信息 -->
+    <div style="position: relative; top: 0px;">
+        <div style="position: relative; left: 40px; height: 30px;">
+            <div style="width: 300px; color: gray;">所有者</div>
+            <div style="width: 300px;position: relative; left: 200px; top: -20px;"><b>{{tran.owner}}</b></div>
+            <div style="width: 300px;position: absolute; left: 450px; top:  0; color: gray;">金额</div>
+            <div style="width: 300px;position: absolute; left: 650px; top:  0;"><b>{{tran.money}}</b></div>
+            <div style="height: 1px; width: 400px; background: #D5D5D5; position: absolute; top: 20px;"></div>
+            <div style="height: 1px; width: 400px; background: #D5D5D5; position: absolute; top: 20px; left: 450px;"></div>
+        </div>
+        <div style="position: relative; left: 40px; height: 30px; top: 10px;">
+            <div style="width: 300px; color: gray;">名称</div>
+            <div style="width: 300px;position: relative; left: 200px; top: -20px;"><b>{{tran.name}}</b></div>
+            <div style="width: 300px;position: absolute; left: 450px; top:  0; color: gray;">预计成交日期</div>
+            <div style="width: 300px;position: absolute; left: 650px; top:  0;"><b>{{tran.expecteddate}}</b></div>
+            <div style="height: 1px; width: 400px; background: #D5D5D5; position: absolute; top: 20px;"></div>
+            <div style="height: 1px; width: 400px; background: #D5D5D5; position: absolute; top: 20px; left: 450px;"></div>
+        </div>
+        <div style="position: relative; left: 40px; height: 30px; top: 20px;">
+            <div style="width: 300px; color: gray;">客户名称</div>
+            <div style="width: 300px;position: relative; left: 200px; top: -20px;"><b>{{tran.customerid}}</b></div>
+            <div style="width: 300px;position: absolute; left: 450px; top:  0; color: gray;">阶段</div>
+            <div style="width: 300px;position: absolute; left: 650px; top:  0;"><b>{{tran.stage}}</b></div>
+            <div style="height: 1px; width: 400px; background: #D5D5D5; position: absolute; top: 20px;"></div>
+            <div style="height: 1px; width: 400px; background: #D5D5D5; position: absolute; top: 20px; left: 450px;"></div>
+        </div>
+        <div style="position: relative; left: 40px; height: 30px; top: 30px;">
+            <div style="width: 300px; color: gray;">类型</div>
+            <div style="width: 300px;position: relative; left: 200px; top: -20px;"><b>{{tran.type}}</b></div>
+            <div style="width: 300px;position: absolute; left: 450px; top:  0; color: gray;">可能性</div>
+            <div style="width: 300px;position: absolute; left: 650px; top:  0;"><b>90</b></div>
+            <div style="height: 1px; width: 400px; background: #D5D5D5; position: absolute; top: 20px;"></div>
+            <div style="height: 1px; width: 400px; background: #D5D5D5; position: absolute; top: 20px; left: 450px;"></div>
+        </div>
+        <div style="position: relative; left: 40px; height: 30px; top: 40px;">
+            <div style="width: 300px; color: gray;">来源</div>
+            <div style="width: 300px;position: relative; left: 200px; top: -20px;"><b>{{tran.source}}</b></div>
+            <div style="width: 300px;position: absolute; left: 450px; top:  0; color: gray;">市场活动源</div>
+            <div style="width: 300px;position: absolute; left: 650px; top:  0;"><b>{{tran.activityid}}</b></div>
+            <div style="height: 1px; width: 400px; background: #D5D5D5; position: absolute; top: 20px;"></div>
+            <div style="height: 1px; width: 400px; background: #D5D5D5; position: absolute; top: 20px; left: 450px;"></div>
+        </div>
+        <div style="position: relative; left: 40px; height: 30px; top: 50px;">
+            <div style="width: 300px; color: gray;">联系人名称</div>
+            <div style="width: 500px;position: relative; left: 200px; top: -20px;"><b>{{tran.contactsid}}</b></div>
+            <div style="height: 1px; width: 550px; background: #D5D5D5; position: absolute; top: 20px;"></div>
+        </div>
+        <div style="position: relative; left: 40px; height: 30px; top: 60px;">
+            <div style="width: 300px; color: gray;">创建者</div>
+            <div style="width: 500px;position: relative; left: 200px; top: -20px;"><b>{{tran.createby}}&nbsp;&nbsp;</b><small style="font-size: 10px; color: gray;">{{tran.createtime}}</small></div>
+            <div style="height: 1px; width: 550px; background: #D5D5D5; position: absolute; top: 20px;"></div>
+        </div>
+        <div style="position: relative; left: 40px; height: 30px; top: 70px;">
+            <div style="width: 300px; color: gray;">修改者</div>
+            <div style="width: 500px;position: relative; left: 200px; top: -20px;"><b>{{tran.editby}}&nbsp;&nbsp;</b><small style="font-size: 10px; color: gray;">{{tran.edittime}}</small></div>
+            <div style="height: 1px; width: 550px; background: #D5D5D5; position: absolute; top: 20px;"></div>
+        </div>
+        <div style="position: relative; left: 40px; height: 30px; top: 80px;">
+            <div style="width: 300px; color: gray;">描述</div>
+            <div style="width: 630px;position: relative; left: 200px; top: -20px;">
+                <b>
+                    {{tran.description}}
+                </b>
+            </div>
+            <div style="height: 1px; width: 850px; background: #D5D5D5; position: absolute; top: 20px;"></div>
+        </div>
+        <div style="position: relative; left: 40px; height: 30px; top: 90px;">
+            <div style="width: 300px; color: gray;">联系纪要</div>
+            <div style="width: 630px;position: relative; left: 200px; top: -20px;">
+                <b>
+                    {{tran.contactsummary}}
+                </b>
+            </div>
+            <div style="height: 1px; width: 850px; background: #D5D5D5; position: absolute; top: 20px;"></div>
+        </div>
+        <div style="position: relative; left: 40px; height: 30px; top: 100px;">
+            <div style="width: 300px; color: gray;">下次联系时间</div>
+            <div style="width: 500px;position: relative; left: 200px; top: -20px;"><b>{{tran.nextcontacttime}}</b></div>
+            <div style="height: 1px; width: 400px; background: #D5D5D5; position: absolute; top: 20px;"></div>
+        </div>
+    </div>
+
+    <!-- 备注 -->
+    <div style="position: relative; top: 100px; left: 40px;" th:insert="workbench/modal/detail :: remark"></div>
+
+    <!-- 阶段历史 -->
+    <div>
+        <div style="position: relative; top: 100px; left: 40px;">
+            <div class="page-header">
+                <h4>阶段历史</h4>
+            </div>
+            <div style="position: relative;top: 0px;">
+                <table  class="table table-hover" style="width: 900px;">
+                    <thead>
+                    <tr style="color: #B3B3B3;">
+                        <td>阶段</td>
+                        <td>金额</td>
+                        <td>可能性</td>
+                        <td>预计成交日期</td>
+                        <td>创建时间</td>
+                        <td>创建人</td>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr v-for="(item,i) in tranHistoryList">
+                        <td>{{item.stage}}</td>
+                        <td>{{item.money}}</td>
+                        <td>50</td>
+                        <td>{{item.expecteddate}}</td>
+                        <td>{{item.createtime}}</td>
+                        <td>{{item.createby}}</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+    </div>
+
+    <div style="height: 200px;"></div>
+</div>
+
+<div th:fragment="tran-edit">
+
+    <!-- 查找联系人 -->
+    <div class="modal fade" id="contacts-source-modal" role="dialog">
+        <div class="modal-dialog" role="document" style="width: 80%;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                    <h4 class="modal-title">查找联系人</h4>
+                </div>
+                <div class="modal-body">
+                    <div class="btn-group" style="position: relative; top: 18%; left: 8px;">
+                        <form class="form-inline" role="form">
+                            <div class="form-group has-feedback">
+                                <input type="text" class="form-control" style="width: 300px;"
+                                       placeholder="请输入联系人名称，支持模糊查询" v-model="name">
+                                <span class="glyphicon glyphicon-search form-control-feedback"></span>
+                            </div>
+                        </form>
+                    </div>
+                    <table class="table table-hover" style="width: 900px; position: relative;top: 10px;">
+                        <thead>
+                        <tr style="color: #B3B3B3;">
+                            <td></td>
+                            <td>名称</td>
+                            <td>邮箱</td>
+                            <td>手机</td>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr v-for="(item,i) in contactsList">
+                            <td><input type="radio" name="contacts" v-model="checkedName" :value="item.id"/></td>
+                            <td>{{item.fullname}}</td>
+                            <td>{{item.email}}</td>
+                            <td>{{item.mphone}}</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" @click="modalSave">确定</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="tran-edit" v-show="seen">
+    <div style="position:  relative; left: 30px;">
+        <h3>{{modalTitle}}</h3>
+        <div style="position: relative; top: -40px; left: 70%;">
+            <button type="button" class="btn btn-primary" @click="modalSave">保存</button>
+            <button type="button" class="btn btn-default" @click="returnMain">取消</button>
+        </div>
+        <hr style="position: relative; top: -40px;">
+    </div>
+    <form class="form-horizontal" role="form" style="position: relative; top: -30px;">
+        <div class="form-group">
+            <label for="create-transactionOwner" class="col-sm-2 control-label">所有者<span style="font-size: 15px; color: red;">*</span></label>
+            <div class="col-sm-10" style="width: 300px;">
+                <select class="form-control" id="create-transactionOwner" v-model="modalData.owner">
+                    <option th:each="user:${#servletContext.getAttribute('userMap')}" th:value="${user.key}"
+                            th:text="${user.value.name}"></option>
+                </select>
+            </div>
+            <label for="create-amountOfMoney" class="col-sm-2 control-label">金额</label>
+            <div class="col-sm-10" style="width: 300px;">
+                <input type="text" class="form-control" id="create-amountOfMoney" v-model.trim="modalData.money">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="create-transactionName" class="col-sm-2 control-label">名称<span style="font-size: 15px; color: red;">*</span></label>
+            <div class="col-sm-10" style="width: 300px;">
+                <input type="text" class="form-control" id="create-transactionName" v-model.trim="modalData.name">
+            </div>
+            <label for="create-expectedClosingDate" class="col-sm-2 control-label">预计成交日期<span style="font-size: 15px; color: red;">*</span></label>
+            <div class="col-sm-10" style="width: 300px;">
+                <input type="text" class="form-control date" id="create-expectedClosingDate"
+                       v-model="modalData.expecteddate"  @click="changeVal(['modalData', 'expecteddate'],$event)">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="tran-customer-name" class="col-sm-2 control-label">客户名称<span style="font-size: 15px; color: red;">*</span></label>
+            <div class="col-sm-10" style="width: 300px;">
+                <input type="text" class="form-control" id="tran-customer-name"
+                       placeholder="支持自动补全，输入客户不存在则新建" v-model.trim="modalData.customerid">
+            </div>
+            <label for="create-transactionStage" class="col-sm-2 control-label">阶段<span style="font-size: 15px; color: red;">*</span></label>
+            <div class="col-sm-10" style="width: 300px;">
+                <select class="form-control" id="create-transactionStage" v-model="modalData.stage">
+                    <option value=""></option>
+                    <option th:each="item:${#servletContext.getAttribute('dicMap')['stage']}"
+                            th:value="${item.key}" th:text="${item.value.text}"></option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="create-transactionType" class="col-sm-2 control-label">类型</label>
+            <div class="col-sm-10" style="width: 300px;">
+                <select class="form-control" id="create-transactionType" v-model="modalData.type">
+                    <option value=""></option>
+                    <option th:each="item:${#servletContext.getAttribute('dicMap')['transactionType']}"
+                            th:value="${item.key}" th:text="${item.value.text}"></option>
+                </select>
+            </div>
+            <label for="create-possibility" class="col-sm-2 control-label">可能性</label>
+            <div class="col-sm-10" style="width: 300px;">
+                <input type="text" class="form-control" id="create-possibility">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="create-clueSource" class="col-sm-2 control-label">来源</label>
+            <div class="col-sm-10" style="width: 300px;">
+                <select class="form-control" id="create-clueSource" v-model="modalData.source">
+                    <option value=""></option>
+                    <option th:each="item:${#servletContext.getAttribute('dicMap')['source']}"
+                            th:value="${item.key}" th:text="${item.value.text}">广告</option>
+                </select>
+            </div>
+            <label for="create-activitySrc" class="col-sm-2 control-label">市场活动源&nbsp;&nbsp;<a @click="openActivitySourceModal"><span class="glyphicon glyphicon-search"></span></a></label>
+            <div class="col-sm-10" style="width: 300px;">
+                <input type="text" class="form-control" id="create-activitySrc" v-model.trim="activityName">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="create-contactsName" class="col-sm-2 control-label">联系人名称&nbsp;&nbsp;<a @click="openContactsSourceModal"><span class="glyphicon glyphicon-search"></span></a></label>
+            <div class="col-sm-10" style="width: 300px;">
+                <input type="text" class="form-control" id="create-contactsName" v-model.trim="contactsName">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="create-describe" class="col-sm-2 control-label">描述</label>
+            <div class="col-sm-10" style="width: 70%;">
+                <textarea class="form-control" rows="3" id="create-describe" v-model.trim="modalData.description"></textarea>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="create-contactSummary" class="col-sm-2 control-label">联系纪要</label>
+            <div class="col-sm-10" style="width: 70%;">
+                <textarea class="form-control" rows="3" id="create-contactSummary" v-model.trim="modalData.contactsummary"></textarea>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="create-nextContactTime" class="col-sm-2 control-label">下次联系时间</label>
+            <div class="col-sm-10" style="width: 300px;">
+                <input type="text" class="form-control date" id="create-nextContactTime"
+                       v-model="modalData.nextcontacttime" @click="changeVal(['modalData', 'nextcontacttime'],$event)">
+            </div>
+        </div>
+
+    </form>
+    </div>
+</div>
+
+</body>
+</html>
+

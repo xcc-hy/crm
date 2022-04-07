@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+
+    <script type="text/javascript" src="jquery/jquery-1.11.1-min.js"></script>
+    <script type="text/javascript" src="jquery/chart/echarts.min.js"></script>
+
+    <script type="text/javascript">
+
+        $(function(){
+
+            var myChart = echarts.init(document.getElementById('main'));
+
+            var data = [
+                {"name":"01\u8D44\u8D28\u5BA1\u67E5","value":4},
+                {"name":"02\u9700\u6C42\u5206\u6790","value":7},
+                {"name":"03\u4EF7\u503C\u5EFA\u8BAE","value":10},
+                {"name":"04\u786E\u5B9A\u51B3\u7B56\u8005","value":5},
+                {"name":"05\u63D0\u6848\/\u62A5\u4EF7","value":8},
+                {"name":"06\u8C08\u5224\/\u590D\u5BA1","value":1},
+                {"name":"07\u6210\u4EA4","value":1},
+                {"name":"08\u4E22\u5931\u7684\u7EBF\u7D22","value":2},
+                {"name":"09\u56E0\u7ADE\u4E89\u4E22\u5931\u5173\u95ED","value":3}
+            ];
+
+            var maxValue = 1;
+            data.forEach(d => {
+                if (d.value > maxValue) {
+                    maxValue = d.value;
+                }
+            });
+
+
+            // 指定图表的配置项和数据
+            option = {
+                title: {
+                    text: '漏斗图',
+                    subtext: '纯属虚构'
+                },
+                tooltip: {
+                    trigger: 'item',
+                    formatter: "{a} <br/>{b} : {c}%"
+                },
+                toolbox: {
+                    feature: {
+                        dataView: {readOnly: false},
+                        restore: {},
+                        saveAsImage: {}
+                    }
+                },
+                legend: {
+                    data: ["01\u8D44\u8D28\u5BA1\u67E5","02\u9700\u6C42\u5206\u6790",
+                        "03\u4EF7\u503C\u5EFA\u8BAE","04\u786E\u5B9A\u51B3\u7B56\u8005",
+                        "05\u63D0\u6848\/\u62A5\u4EF7","06\u8C08\u5224\/\u590D\u5BA1",
+                        "07\u6210\u4EA4","08\u4E22\u5931\u7684\u7EBF\u7D22",
+                        "09\u56E0\u7ADE\u4E89\u4E22\u5931\u5173\u95ED"],
+                    orient: 'vertical',
+                    right: 0,
+                    top: 'center',
+                },
+                calculable: true,
+                series: [
+                    {
+                        name:'漏斗图',
+                        type:'funnel',
+                        left: '0%',
+                        top: 60,
+                        //x2: 80,
+                        bottom: 60,
+                        width: '70%',
+                        // height: {totalHeight} - y - y2,
+                        min: 0,
+                        max: maxValue,
+                        minSize: '0%',
+                        maxSize: '100%',
+                        sort: 'descending',
+                        gap: 2,
+                        label: {
+                            normal: {
+                                show: true,
+                                position: 'outside'
+                            },
+                            emphasis: {
+                                textStyle: {
+                                    fontSize: 20
+                                }
+                            }
+                        },
+                        labelLine: {
+                            normal: {
+                                length: 10,
+                                lineStyle: {
+                                    width: 1,
+                                    type: 'solid'
+                                }
+                            }
+                        },
+                        itemStyle: {
+                            normal: {
+                                borderColor: '#fff',
+                                borderWidth: 1
+                            }
+                        },
+                        data: data
+
+                    }
+                ]
+            };
+
+            // 使用刚指定的配置项和数据显示图表。
+            myChart.setOption(option);
+
+        })
+
+    </script>
+</head>
+<body>
+<div>
+    <div style="position: relative; left: 10px; top: -10px;">
+        <div class="page-header">
+            <h3>市场活动统计表格</h3>
+        </div>
+    </div>
+</div>
+<div id="main" style="position: relative; top: 60px; left: 100px; width: 800px;height:400px;">
+</div>
+
+</body>
+</html>

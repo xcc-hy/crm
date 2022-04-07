@@ -1,0 +1,41 @@
+# 数据库设置
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://192.168.195.136:3306/crm?useUnicode=true&characterEncoding=UTF-8&serverTimezone=GMT%2B8
+    username: root
+    password: xcc297532
+  redis:
+    host: 192.168.195.136
+    port: 6379
+
+
+
+server:
+  port: 8080
+  servlet:
+    context-path: /myWeb
+    encoding:
+      force: true
+      charset: UTF-8
+
+#    session:
+#      timeout: 30m # session的生命周期
+#      cookie:
+#        path: / # cookie存放的根路径，用于实现同域名不同项目的session共享
+#        domain: myWeb.com  # cookie的存放域名，用于实现同根域名不同二级域名的session共享
+
+
+mybatis:
+  mapper-locations: classpath:mapper/**/*.xml
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+# pagehelper
+pagehelper:
+  reasonable: true
+  helper-dialect: mysql
+  support-methods-arguments: true
+  params: count=countSql
+
+
+

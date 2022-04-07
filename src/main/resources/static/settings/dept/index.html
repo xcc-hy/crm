@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<link href="../../jquery/bootstrap_3.3.0/css/bootstrap.min.css" type="text/css" rel="stylesheet" />
+
+<script type="text/javascript" src="../../jquery/jquery-1.11.1-min.js"></script>
+<script type="text/javascript" src="../../jquery/bootstrap_3.3.0/js/bootstrap.min.js"></script>
+	<script type="text/javascript">
+
+		//页面加载完毕
+		$(function() {
+			window.open("../../settings/dept/init", "deptFrame");
+			// 关闭新建模态窗口
+			$('#btn-create-close').click(function () {
+				$('#btn-create-reset').click();
+			});
+		});
+		// 弹出提示窗口
+		function alertMsg(msg) {
+			$('#alert-body').html(msg);
+			$('#alertModal').modal('show');
+		}
+		// 删除函数
+		function deleteData() {
+			var input_check = $(window.frames["deptFrame"].document).find("input[name=ck]:checked");
+			var length = input_check.length;
+			if (length == 0) {
+				alertMsg("请选择需要删除的数据!");
+				return;
+			}
+			if(confirm("确定删除这"+ length +"条数据？")) {
+				var lst = new Array();
+				$.each(input_check,function (index,item) {
+					lst.push($(item).val());
+				});
+				$.ajax({
+					url : '../../settings/dept/delete',
+					data:{"ids" : lst},
+					type : 'post',
+					success : function (data) {
+						if (data.success) {
+							$(window.frames["deptFrame"].document).find('#update-frame')[0].click();
+						}
+						alertMsg(data.msg);
+					}
+				})
+			}
+		}
+		// 新建模态窗口
+		function openCreateModel() {
+			$('#myModalLabel').html('<span class="glyphicon glyphicon-plus"></span> 新增部门');
+			$('#create-code').attr('readonly',false);
+			$('#createDeptModal').modal('show');
+			// 新建-保存按钮事件
+			$('#btn-create-save').click(function () {
+				if ($('#create-code').val() == "") {
+					$('#create-msg').html("编号不能为空");
+					return;
+				}
+				if ($('#create-name').val() == "") {
+					$('#create-msg').html("名称不能为空");
+					return;
+				}
+				$.ajax({
+					url : '../../settings/dept/create',
+					data:{"id" : $('#create-code').val(),
+						"name" : $('#create-name').val(),
+						"manager" : $('#create-manager').val(),
+						"phone" : $('#create-phone').val(),
+						"description" : $('#create-describe').val()},
+					type : 'post',
+					success : function (data) {
+						if (data.success) {
+							$('#create-msg').html("");
+							$('#btn-create-close').click();
+							$(window.frames["deptFrame"].document).find('#update-frame')[0].click();
+							alertMsg(data.msg);
+						} else {
+							$('#create-msg').html(data.msg);
+							$('#btn-create-reset').click();
+						}
+					}
+				})
+			});
+		}
+		// 修改模态窗口
+		function openEidtModel() {
+			// 检查是否选择了要修改的部门
+			//取得所有name=ck的被选中的复选框
+			var input_check = $(window.frames["deptFrame"].document).find("input[name=ck]:checked");
+			var length = input_check.length;
+			if (length == 0) {
+				alertMsg("请选择需要修改的数据!");
+				return;
+			}
+			if (length >= 2) {
+				alertMsg("一次只能修改一条数据!");
+				return;
+			}
+			$.ajax({
+				url : '../../settings/dept/queryById',
+				data:{"id" : input_check.val()},
+				type : 'get',
+				success : function (data) {
+					$('#create-code').val(data.id);
+					$('#create-name').val(data.name);
+					$('#create-manager').val(data.manager);
+					$('#create-phone').val(data.phone);
+					$('#create-describe').val(data.description);
+					// 打开模态窗口并赋值
+					$('#myModalLabel').html('<span class="glyphicon glyphicon-edit"></span> 编辑部门');
+					$('#create-code').attr('readonly',true);
+					$('#createDeptModal').modal('show');
+					// 修改-保存按钮事件
+					$('#btn-create-save').click(function () {
+						if ($('#create-name').val() == "") {
+							$('#create-msg').html("名称不能为空");
+							return;
+						}
+						$.ajax({
+							url : '../../settings/dept/update',
+							data:{"id" : $('#create-code').val(),
+								"name" : $('#create-name').val(),
+								"manager" : $('#create-manager').val(),
+								"phone" : $('#create-phone').val(),
+								"description" : $('#create-describe').val()},
+							type : 'post',
+							success : function (data) {
+								if (data.success) {
+									$('#create-msg').html("");
+									$('#btn-create-close').click();
+									$(window.frames["deptFrame"].document).find('#update-frame')[0].click();
+									alertMsg(data.msg);
+								} else {
+									$('#create-msg').html(data.msg);
+									$('#btn-create-reset').click();
+								}
+							}
+						})
+					});
+				}
+			})
+		}
+
+	</script>
+</head>
+<body>
+	
+	<!-- 创建部门的模态窗口 -->
+	<div class="modal fade" id="createDeptModal" role="dialog">
+		<div class="modal-dialog" role="document" style="width: 80%;">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal">
+						<span aria-hidden="true">×</span>
+					</button>
+					<h4 class="modal-title" id="myModalLabel"><span class="glyphicon glyphicon-plus"></span> 新增部门</h4>
+				</div>
+				<div class="modal-body">
+				
+					<form class="form-horizontal" role="form">
+					
+						<div class="form-group">
+							<label for="create-code" class="col-sm-2 control-label">编号<span style="font-size: 15px; color: red;">*</span></label>
+							<div class="col-sm-10" style="width: 300px;">
+								<input type="text" class="form-control" id="create-code" style="width: 200%;" placeholder="编号不能为空，具有唯一性">
+							</div>
+						</div>
+						
+						<div class="form-group">
+							<label for="create-name" class="col-sm-2 control-label">名称<span style="font-size: 15px; color: red;">*</span></label>
+							<div class="col-sm-10" style="width: 300px;">
+								<input type="text" class="form-control" id="create-name" style="width: 200%;" placeholder="名称不能为空，具有唯一性">
+							</div>
+						</div>
+						
+						<div class="form-group">
+							<label for="create-manager" class="col-sm-2 control-label">负责人</label>
+							<div class="col-sm-10" style="width: 300px;">
+								<input type="text" class="form-control" id="create-manager" style="width: 200%;">
+							</div>
+						</div>
+						
+						<div class="form-group">
+							<label for="create-phone" class="col-sm-2 control-label">电话</label>
+							<div class="col-sm-10" style="width: 300px;">
+								<input type="text" class="form-control" id="create-phone" style="width: 200%;">
+							</div>
+						</div>
+						
+						<div class="form-group">
+							<label for="create-describe" class="col-sm-2 control-label">描述</label>
+							<div class="col-sm-10" style="width: 55%;">
+								<textarea class="form-control" rows="3" id="create-describe"></textarea>
+							</div>
+						</div>
+						<div class="modal-footer">
+							<div>
+								<label id="create-msg" style="color: red"></label>
+							</div>
+							<input type="reset" style="display: none" id="btn-create-reset"/>
+							<button type="button" class="btn btn-default" data-dismiss="modal" id="btn-create-close">关闭</button>
+							<button type="button" class="btn btn-primary" id="btn-create-save">保存</button>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!--警告窗口-->
+	<div class="modal fade" id="alertModal" tabindex="-1" aria-labelledby="alertModalLabel" aria-hidden="true">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h2 class="modal-title" id="alertModalLabel">提示</h2>
+				</div>
+				<div class="modal-body" >
+					<p id="alert-body" style="color: red"></p>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">确定</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	
+	<div style="width: 95%">
+		<div>
+			<div style="position: relative; left: 30px; top: -10px;">
+				<div class="page-header">
+					<h3>部门列表</h3>
+				</div>
+			</div>
+		</div>
+		<div class="btn-toolbar" role="toolbar" style="background-color: #F7F7F7; height: 50px; position: relative;left: 30px; top:-30px;">
+			<div class="btn-group" style="position: relative; top: 18%;">
+			  <button type="button" class="btn btn-primary" onclick="openCreateModel()"><span class="glyphicon glyphicon-plus"></span> 创建</button>
+			  <button type="button" class="btn btn-default" onclick="openEidtModel()"><span class="glyphicon glyphicon-edit"></span> 编辑</button>
+			  <button type="button" class="btn btn-danger" onclick="deleteData()"><span class="glyphicon glyphicon-minus"></span> 删除</button>
+			</div>
+		</div>
+		<div id="workarea" style="position: absolute; top : 140px; left: 0px; width: 97%; height: 100%;">
+			<iframe style="border-width: 0px; width: 100%; height: 100%;" name="deptFrame" id="deptFrame"></iframe>
+		</div>
+
+			
+	</div>
+	
+</body>
+</html>

@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>$Title$</title>
+</head>
+<body>
+<!-- 修改线索备注的模态窗口 -->
+<div class="modal fade" id="remark-modal" role="dialog" th:fragment="remark-modal">
+  <div class="modal-dialog" role="document" style="width: 40%;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">
+          <span aria-hidden="true">×</span>
+        </button>
+        <h4 class="modal-title" id="myModalLabel">修改备注</h4>
+      </div>
+      <div class="modal-body">
+        <form class="form-horizontal" role="form">
+          <div class="form-group">
+            <label for="noteContent" class="col-sm-2 control-label">内容</label>
+            <div class="col-sm-10" style="width: 81%;">
+              <textarea class="form-control" rows="3" id="noteContent" v-model="noteContent"></textarea>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+        <button type="button" class="btn btn-primary" @click="modalSave">更新</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 联系人的模态窗口 -->
+<div class="modal fade" id="contacts-modal" role="dialog" th:fragment="contacts-modal">
+  <div class="modal-dialog" role="document" style="width: 85%;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">
+          <span aria-hidden="true">×</span>
+        </button>
+        <h4 class="modal-title" id="myModalLabelx">{{modalTitle}}</h4>
+      </div>
+      <div class="modal-body">
+        <form class="form-horizontal" role="form">
+
+          <div class="form-group">
+            <label for="create-contactsOwner" class="col-sm-2 control-label">所有者<span style="font-size: 15px; color: red;">*</span></label>
+            <div class="col-sm-10" style="width: 300px;">
+              <select class="form-control" id="create-contactsOwner" v-model="modalData.owner">
+                <option value=""></option>
+                <option th:each="user:${#servletContext.getAttribute('userMap')}"
+                        th:value="${user.key}"
+                        th:text="${user.value.name}"></option>
+              </select>
+            </div>
+            <label for="create-clueSource" class="col-sm-2 control-label">来源</label>
+            <div class="col-sm-10" style="width: 300px;">
+              <select class="form-control" id="create-clueSource" v-model="modalData.source">
+                <option></option>
+                <option th:each="item:${#servletContext.getAttribute('dicMap')['source']}"
+                        th:value="${item.key}" th:text="${item.value.text}">广告</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="create-surname" class="col-sm-2 control-label">姓名<span style="font-size: 15px; color: red;">*</span></label>
+            <div class="col-sm-10" style="width: 300px;">
+              <input type="text" class="form-control" id="create-surname" v-model="modalData.fullname">
+            </div>
+            <label for="create-call" class="col-sm-2 control-label">称呼</label>
+            <div class="col-sm-10" style="width: 300px;">
+              <select class="form-control" id="create-call" v-model="modalData.appellation">
+                <option></option>
+                <option th:each="item:${#servletContext.getAttribute('dicMap')['appellation']}"
+                        th:value="${item.key}" th:text="${item.value.text}">广告</option>
+              </select>
+            </div>
+
+          </div>
+
+          <div class="form-group">
+            <label for="create-job" class="col-sm-2 control-label">职位</label>
+            <div class="col-sm-10" style="width: 300px;">
+              <input type="text" class="form-control" id="create-job" v-model="modalData.job">
+            </div>
+            <label for="create-mphone" class="col-sm-2 control-label">手机</label>
+            <div class="col-sm-10" style="width: 300px;">
+              <input type="text" class="form-control" id="create-mphone" v-model="modalData.mphone">
+            </div>
+          </div>
+
+          <div class="form-group" style="position: relative;">
+            <label for="create-email" class="col-sm-2 control-label">邮箱</label>
+            <div class="col-sm-10" style="width: 300px;">
+              <input type="text" class="form-control" id="create-email" v-model="modalData.email">
+            </div>
+            <label for="create-birth" class="col-sm-2 control-label">生日</label>
+            <div class="col-sm-10" style="width: 300px;">
+              <input type="text" class="form-control date" id="create-birth"
+                     v-model="modalData.birth"  @click="changeVal(['modalData', 'birth'],$event)">
+            </div>
+          </div>
+
+          <div class="form-group" style="position: relative;">
+            <label for="contacts-customer-name" class="col-sm-2 control-label">客户名称</label>
+            <div class="col-sm-10" style="width: 300px;">
+              <input type="text" class="form-control" id="contacts-customer-name"
+                     placeholder="支持自动补全，输入客户不存在则新建" v-model="modalData.customerid">
+            </div>
+          </div>
+
+          <div class="form-group" style="position: relative;">
+            <label for="create-describe" class="col-sm-2 control-label">描述</label>
+            <div class="col-sm-10" style="width: 81%;">
+              <textarea class="form-control" rows="3"
+                        id="create-describe" v-model="modalData.description"></textarea>
+            </div>
+          </div>
+
+          <div style="height: 1px; width: 103%; background-color: #D5D5D5; left: -13px; position: relative;"></div>
+
+          <div style="position: relative;top: 15px;">
+            <div class="form-group">
+              <label for="create-contactSummary1" class="col-sm-2 control-label">联系纪要</label>
+              <div class="col-sm-10" style="width: 81%;">
+                <textarea class="form-control" rows="3"
+                          id="create-contactSummary1" v-model="modalData.contactsummary"></textarea>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="create-nextContactTime1" class="col-sm-2 control-label">下次联系时间</label>
+              <div class="col-sm-10" style="width: 300px;">
+                <input type="text" class="form-control date" id="create-nextContactTime1"
+                       v-model="modalData.nextcontacttime"  @click="changeVal(['modalData', 'nextcontacttime'],$event)">
+              </div>
+            </div>
+          </div>
+
+          <div style="height: 1px; width: 103%; background-color: #D5D5D5; left: -13px; position: relative; top : 10px;"></div>
+
+          <div style="position: relative;top: 20px;">
+            <div class="form-group">
+              <label for="edit-address1" class="col-sm-2 control-label">详细地址</label>
+              <div class="col-sm-10" style="width: 81%;">
+                <textarea class="form-control" rows="1"
+                          id="edit-address1" v-model="modalData.address">北京大兴区大族企业湾</textarea>
+              </div>
+            </div>
+          </div>
+        </form>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+        <button type="button" class="btn btn-primary" @click="modalSave">保存</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- 市场活动的模态窗口 -->
+<div class="modal fade" id="activity-modal" role="dialog" th:fragment="activity-modal">
+  <div class="modal-dialog" role="document" style="width: 85%;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">
+          <span aria-hidden="true">×</span>
+        </button>
+        <h4 class="modal-title" id="modal-label">{{modalTitle}}</h4>
+      </div>
+      <div class="modal-body">
+
+        <form class="form-horizontal" role="form">
+
+          <div class="form-group">
+            <label for="modal-marketActivityOwner" class="col-sm-2 control-label">所有者<span style="font-size: 15px; color: red;">*</span></label>
+            <div class="col-sm-10" style="width: 300px;">
+              <select class="form-control" id="modal-marketActivityOwner" v-model="modalData.owner">
+                <option th:each="user:${#servletContext.getAttribute('userMap')}" th:value="${user.key}"
+                        th:text="${user.value.name}"></option>
+              </select>
+            </div>
+            <label for="modal-marketActivityName" class="col-sm-2 control-label">名称<span style="font-size: 15px; color: red;">*</span></label>
+            <div class="col-sm-10" style="width: 300px;">
+              <input type="text" class="form-control" id="modal-marketActivityName" v-model="modalData.name">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="modal-startTime" class="col-sm-2 control-label">开始日期</label>
+            <div class="col-sm-10" style="width: 300px;">
+              <input type="text" class="form-control date" id="modal-startTime"
+                     v-model="modalData.startdate" @click="changeVal(['modalData', 'startdate'],$event)">
+            </div>
+            <label for="modal-endTime" class="col-sm-2 control-label">结束日期</label>
+            <div class="col-sm-10" style="width: 300px;">
+              <input type="text" class="form-control date" id="modal-endTime"
+                     v-model="modalData.enddate" @click="changeVal(['modalData', 'enddate'],$event)">
+            </div>
+          </div>
+          <div class="form-group">
+
+            <label for="modal-cost" class="col-sm-2 control-label">成本</label>
+            <div class="col-sm-10" style="width: 300px;">
+              <input type="text" class="form-control" id="modal-cost" v-model="modalData.cost">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="modal-describe" class="col-sm-2 control-label">描述</label>
+            <div class="col-sm-10" style="width: 81%;">
+              <textarea class="form-control" rows="3" id="modal-describe" v-model="modalData.description"></textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <input type="reset" style="display: none" id="modal-reset"/>
+            <button type="button" class="btn btn-default" data-dismiss="modal" id="modal-close">关闭</button>
+            <button type="button" class="btn btn-primary" @click="modalSave">保存</button>
+          </div>
+        </form>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 关联市场活动的模态窗口 -->
+<div class="modal fade" id="activity-relation-modal" th:fragment="activity-relation-modal" role="dialog">
+  <div class="modal-dialog" role="document" style="width: 80%;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">
+          <span aria-hidden="true">×</span>
+        </button>
+        <h4 class="modal-title">关联市场活动</h4>
+      </div>
+      <div class="modal-body">
+        <div class="btn-group" style="position: relative; top: 18%; left: 8px;">
+          <form class="form-inline" role="form">
+            <div class="form-group has-feedback">
+              <input type="text" class="form-control" style="width: 300px;"
+                     placeholder="请输入市场活动名称，支持模糊查询" v-model="name"><!---->
+              <span class="glyphicon glyphicon-search form-control-feedback"></span>
+            </div>
+          </form>
+        </div>
+        <div id="activity-table">
+          <table id="activityTable" class="table table-hover" style="width: 900px; position: relative;top: 10px;">
+            <thead>
+            <tr style="color: #B3B3B3;">
+              <td><input type="checkbox" v-model="checkedAll" @change="clickCheckAll"/></td>
+              <td>名称</td>
+              <td>开始日期</td>
+              <td>结束日期</td>
+              <td>所有者</td>
+              <td></td>
+            </tr>
+            </thead>
+            <tbody>
+            <tr v-for="(item,i) in activityList">
+              <td><input type="checkbox" :value="item.id" v-model="checkedNames" @change="clickCheckItem"/></td>
+              <td>{{item.name}}</td>
+              <td>{{item.startdate}}</td>
+              <td>{{item.enddate}}</td>
+              <td>{{item.owner}}</td>
+              <td></td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+        <button type="button" class="btn btn-primary" @click="modalSave">关联</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 搜索市场活动的模态窗口 -->
+<div class="modal fade" id="activity-source-modal" th:fragment="activity-source-modal" role="dialog" >
+  <div class="modal-dialog" role="document" style="width: 90%;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">
+          <span aria-hidden="true">×</span>
+        </button>
+        <h4 class="modal-title">搜索市场活动</h4>
+      </div>
+      <div class="modal-body">
+        <div class="btn-group" style="position: relative; top: 18%; left: 8px;">
+          <form class="form-inline" role="form">
+            <div class="form-group has-feedback">
+              <input type="text" class="form-control" style="width: 300px;"
+                     placeholder="请输入市场活动名称，支持模糊查询" v-model="name">
+              <span class="glyphicon glyphicon-search form-control-feedback"></span>
+            </div>
+          </form>
+        </div>
+        <div>
+          <table class="table table-hover" style="width: 900px; position: relative;top: 10px;">
+            <thead>
+            <tr style="color: #B3B3B3;">
+              <td></td>
+              <td>名称</td>
+              <td>开始日期</td>
+              <td>结束日期</td>
+              <td>所有者</td>
+              <td></td>
+            </tr>
+            </thead>
+            <tbody>
+            <tr v-for="(item,i) in activityList">
+              <td><input type="radio" name="activity" v-model="checkedName" :value="item.id"/></td>
+              <td>{{item.name}}</td>
+              <td>{{item.startdate}}</td>
+              <td>{{item.enddate}}</td>
+              <td>{{item.owner}}</td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+        <button type="button" class="btn btn-primary" @click="modalSave">确定</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+</body>
+</html>
+

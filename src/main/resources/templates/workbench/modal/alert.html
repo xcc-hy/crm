@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>$Title$</title>
+</head>
+<body>
+<!--警告窗口-->
+<div th:fragment="alert-modal" class="modal fade" id="alertModal" tabindex="-1" aria-labelledby="alertModalLabel" aria-hidden="true"  style="z-index: 1200">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title" id="alertModalLabel">提示</h2>
+      </div>
+      <div class="modal-body" >
+        <p id="alert-body" style="color: red"></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">确定</button>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
+

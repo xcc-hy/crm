@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <base th:href="${#request.getContextPath()}+'/'">
+    <link href="jquery/bootstrap_3.3.0/css/bootstrap.min.css" type="text/css" rel="stylesheet" />
+
+    <script type="text/javascript" src="jquery/jquery-1.11.1-min.js"></script>
+    <script type="text/javascript" src="jquery/bootstrap_3.3.0/js/bootstrap.min.js"></script>
+    <script type="text/javascript">
+        function allClick() {
+            //取得全选复选框的选中未选 中状态
+            var ischeck=$("#all").prop("checked");
+            //将此状态赋值给每个商品列表里的复选框
+            $("input[name=ck]").each(function () {
+                this.checked=ischeck;
+            });
+        }
+        function ckClick() {
+            //取得所有name=ck的被选中的复选框
+            var length=$("input[name=ck]:checked").length;
+            //取得所有name=ck的复选框
+            var len=$("input[name=ck]").length;
+            //比较
+            if(len == length){
+                $("#all").prop("checked",true);
+            }else
+            {
+                $("#all").prop("checked",false);
+            }
+        }
+    </script>
+</head>
+<body>
+<div style="position: relative; left: 30px; top: -10px;">
+    <table class="table table-hover">
+        <thead>
+        <tr style="color: #B3B3B3;">
+            <td><input type="checkbox" id="all" onclick="allClick()"/></td>
+            <td>编号</td>
+            <td>名称</td>
+            <td>负责人</td>
+            <td>电话</td>
+            <td>描述</td>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="dept:${info.list}" th:class="${deptStat.odd ? 'active' : ''}">
+            <td><input type="checkbox" name="ck" onclick="ckClick()" th:value="${dept.id}"/></td>
+            <td th:text="${dept.id}">1110</td>
+            <td th:text="${dept.name}">财务部</td>
+            <td th:text="${dept.manager}">张飞</td>
+            <td th:text="${dept.phone}">010-84846005</td>
+            <td th:text="${dept.description}">description info</td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+<a type="button" th:href="@{settings/dept/query(pageSize=${info.pageSize},pageNum=${info.pageNum})}" style="display: none" id="update-frame"></a>
+
+<div style="height: 50px; position: relative;top: 0px; left:30px;">
+    <div>
+        <button type="button" class="btn btn-default" style="cursor: default;">共<b th:text="${info.total}">50</b>条记录</button>
+    </div>
+    <div class="btn-group" style="position: relative;top: -34px; left: 110px;">
+        <button type="button" class="btn btn-default" style="cursor: default;">显示</button>
+        <div class="btn-group">
+            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" th:text="${info.pageSize}">
+                10
+                <span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu" role="menu">
+                <li><a href="settings/dept/query?pageSize=10&pageNum=1">10</a></li>
+                <li><a href="settings/dept/query?pageSize=20&pageNum=1">20</a></li>
+                <li><a href="settings/dept/query?pageSize=30&pageNum=1">30</a></li>
+            </ul>
+        </div>
+        <button type="button" class="btn btn-default" style="cursor: default;">条/页</button>
+    </div>
+    <div style="position: relative;top: -88px; left: 285px;">
+        <nav>
+            <ul class="pagination">
+                <li><a th:href="@{settings/dept/query(pageSize=${info.pageSize},pageNum=1)}">首页</a></li>
+                <li th:class="${info.isFirstPage ? 'disabled' : ''}">
+                    <a th:href="@{settings/dept/query(pageSize=${info.pageSize},pageNum=${info.prePage})}">上一页</a>
+                </li>
+                <li th:each="i:${#numbers.sequence(info.pageNum - 4,info.pageNum + 4)}"
+                    th:if="${i > 0 && i <= info.pages}" th:class="${i == info.pageNum ? 'active' : ''}">
+                    <a th:text="${i}" th:href="@{settings/dept/query(pageSize=${info.pageSize},pageNum=${i})}">1</a>
+                </li>
+                <li th:class="${info.isLastPage ? 'disabled' : ''}">
+                    <a th:href="@{settings/dept/query(pageSize=${info.pageSize},pageNum=${info.nextPage})}">下一页</a>
+                </li>
+                <li><a th:href="@{settings/dept/query(pageSize=${info.pageSize},pageNum=${info.pages})}">末页</a></li>
+            </ul>
+        </nav>
+    </div>
+</div>
+</body>
+</html>
+

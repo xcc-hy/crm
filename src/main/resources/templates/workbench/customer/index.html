@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en"  xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+	<base th:href="${#request.getContextPath()}+'/'">
+<link href="jquery/bootstrap_3.3.0/css/bootstrap.min.css" type="text/css" rel="stylesheet" />
+<link href="jquery/bootstrap-datetimepicker-master/css/bootstrap-datetimepicker.min.css" type="text/css" rel="stylesheet" />
+	<style type="text/css">
+		.mystage{
+			font-size: 20px;
+			vertical-align: middle;
+			cursor: pointer;
+		}
+		.closingDate{
+			font-size : 15px;
+			cursor: pointer;
+			vertical-align: middle;
+		}
+	</style>
+<script type="text/javascript" src="jquery/jquery-1.11.1-min.js"></script>
+<script type="text/javascript" src="jquery/bootstrap_3.3.0/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="jquery/bs_typeahead/bootstrap3-typeahead.min.js"></script>
+<script type="text/javascript" src="jquery/bootstrap-datetimepicker-master/js/bootstrap-datetimepicker.js"></script>
+<script type="text/javascript" src="jquery/bootstrap-datetimepicker-master/locale/bootstrap-datetimepicker.zh-CN.js"></script>
+<script type="text/javascript" src="jquery/vue.js"></script>
+
+<script type="text/javascript">
+
+	$(function(){
+		$(".date").datetimepicker({
+			language:  "zh-CN",
+			format: "yyyy-mm-dd",//显示格式
+			minView: "month",//设置只显示到月份
+			initialDate: new Date(),//初始化当前日期
+			autoclose: true,//选中自动关闭
+			todayBtn: true, //显示今日按钮
+			clearBtn : true,
+			pickerPosition: "bottom-left"
+		});
+		$('.date').datetimepicker().on('hide', function () {
+			$(this).click();
+		});
+		
+	});
+	
+</script>
+</head>
+<body>
+
+<!-- 客户的模态窗口 -->
+<div class="modal fade" id="customer-modal" role="dialog" style="z-index: 1050">
+	<div class="modal-dialog" role="document" style="width: 85%;">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal">
+					<span aria-hidden="true">×</span>
+				</button>
+				<h4 class="modal-title">{{modalTitle}}</h4>
+			</div>
+			<div class="modal-body">
+				<form class="form-horizontal" role="form">
+
+					<div class="form-group">
+						<label for="customer-modal-customerOwner" class="col-sm-2 control-label">所有者<span style="font-size: 15px; color: red;">*</span></label>
+						<div class="col-sm-10" style="width: 300px;">
+							<select class="form-control" id="customer-modal-customerOwner" v-model="modalData.owner">
+								<option value=""></option>
+								<option th:each="user:${#servletContext.getAttribute('userMap')}" th:value="${user.key}"
+										th:text="${user.value.name}"></option>
+							</select>
+						</div>
+						<label for="customer-modal-customerName" class="col-sm-2 control-label">名称<span style="font-size: 15px; color: red;">*</span></label>
+						<div class="col-sm-10" style="width: 300px;">
+							<input type="text" class="form-control" id="customer-modal-customerName" v-model="modalData.name">
+						</div>
+					</div>
+
+					<div class="form-group">
+						<label for="customer-modal-website" class="col-sm-2 control-label">公司网站</label>
+						<div class="col-sm-10" style="width: 300px;">
+							<input type="text" class="form-control" id="customer-modal-website" v-model="modalData.website">
+						</div>
+						<label for="customer-modal-phone" class="col-sm-2 control-label">公司座机</label>
+						<div class="col-sm-10" style="width: 300px;">
+							<input type="text" class="form-control" id="customer-modal-phone" v-model="modalData.phone">
+						</div>
+					</div>
+					<div class="form-group">
+						<label for="customer-modal-describe" class="col-sm-2 control-label">描述</label>
+						<div class="col-sm-10" style="width: 81%;">
+							<textarea class="form-control" rows="3" id="customer-modal-describe" v-model="modalData.description"></textarea>
+						</div>
+					</div>
+					<div style="height: 1px; width: 100%; background-color: #D5D5D5; position: relative;"></div>
+
+					<div style="position: relative;top: 15px;">
+						<div class="form-group">
+							<label for="customer-modal-contactSummary" class="col-sm-2 control-label">联系纪要</label>
+							<div class="col-sm-10" style="width: 81%;">
+								<textarea class="form-control" rows="3" id="customer-modal-contactSummary" v-model="modalData.contactsummary"></textarea>
+							</div>
+						</div>
+						<div class="form-group">
+							<label for="customer-modal-nextContactTime" class="col-sm-2 control-label">下次联系时间</label>
+							<div class="col-sm-10" style="width: 300px;">
+								<input type="text" class="form-control date" id="customer-modal-nextContactTime"
+									   v-model="modalData.nextcontacttime" @click="changeVal(['modalData', 'nextcontacttime'],$event)">
+							</div>
+						</div>
+					</div>
+
+					<div style="height: 1px; width: 100%; background-color: #D5D5D5; position: relative; top : 10px;"></div>
+
+					<div style="position: relative;top: 20px;">
+						<div class="form-group">
+							<label for="customer-modal-address" class="col-sm-2 control-label">详细地址</label>
+							<div class="col-sm-10" style="width: 81%;">
+								<textarea class="form-control" rows="1" id="customer-modal-address" v-model="modalData.address"></textarea>
+							</div>
+						</div>
+					</div>
+				</form>
+
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+				<button type="button" class="btn btn-primary" @click="modalSave">保存</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+
+<div id="customer-main">
+
+	<div v-show="seen">
+	<div>
+		<div style="position: relative; left: 10px; top: -10px;">
+			<div class="page-header">
+				<h3>客户列表</h3>
+			</div>
+		</div>
+	</div>
+	
+	<div style="position: relative; top: -20px; left: 0px; width: 100%; height: 100%;">
+	
+	<div style="width: 100%; position: absolute;top: 5px; left: 10px;">
+
+		<!--查询条件-->
+		<div class="btn-toolbar" role="toolbar" style="height: 80px;" id="customer-query-group">
+			<form class="form-inline" role="form" style="position: relative;top: 8%; left: 5px;">
+
+			  <div class="form-group">
+				<div class="input-group">
+				  <div class="input-group-addon">名称</div>
+				  <input class="form-control" type="text" v-model.trim="queryData.name">
+				</div>
+			  </div>
+
+			  <div class="form-group">
+				<div class="input-group">
+				  <div class="input-group-addon">所有者</div>
+					<select class="form-control" id="modal-clueOwner" v-model="queryData.owner">
+						<option value=""></option>
+						<option th:each="user:${#servletContext.getAttribute('userMap')}" th:value="${user.key}"
+								th:text="${user.value.name}"></option>
+					</select>
+				</div>
+			  </div>
+
+			  <div class="form-group">
+				<div class="input-group">
+				  <div class="input-group-addon">公司座机</div>
+				  <input class="form-control" type="text" v-model.trim="queryData.phone">
+				</div>
+			  </div>
+
+			  <div class="form-group">
+				<div class="input-group">
+				  <div class="input-group-addon">公司网站</div>
+				  <input class="form-control" type="text" v-model.trim="queryData.website">
+				</div>
+			  </div>
+
+			  <button type="button" class="btn btn-default" @click="updateTable(info.pageSize, info.pageNum)">查询</button>
+
+			</form>
+		</div>
+
+		<!--按键组-->
+		<div class="btn-toolbar" role="toolbar" style="background-color: #F7F7F7; height: 50px; position: relative;top: 5px;">
+			<div class="btn-group" style="position: relative; top: 18%;">
+			  <button type="button" class="btn btn-primary" @click="openCreateModal"><span class="glyphicon glyphicon-plus"></span> 创建</button>
+			  <button type="button" class="btn btn-default" @click="openEditModal"><span class="glyphicon glyphicon-pencil"></span> 修改</button>
+			  <button type="button" class="btn btn-danger" @click="deleteData"><span class="glyphicon glyphicon-minus"></span> 删除</button>
+			</div>
+		</div>
+
+
+
+		<div style="position: relative;top: 10px;">
+			<table class="table table-hover">
+				<thead>
+					<tr style="color: #B3B3B3;">
+						<td><input type="checkbox" v-model="checkedAll" @change="clickCheckAll"/></td>
+						<td>名称</td>
+						<td>所有者</td>
+						<td>公司座机</td>
+						<td>公司网站</td>
+					</tr>
+				</thead>
+				<tbody>
+					<tr v-for="(item,i) in info.list" :class="{active : i%2 == 0}">
+						<td><input type="checkbox" :value="item.id" v-model="checkedNames" @change="clickCheckItem"/></td>
+						<td><a style="text-decoration: none; cursor: pointer;" @click="showDetail(item.id)">{{item.name}}</a></td>
+						<td>{{item.owner}}</td>
+						<td>{{item.phone}}</td>
+						<td>{{item.website}}</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+
+		<div style="height: 50px; position: relative;top: 30px;"
+			 th:insert="workbench/modal/page :: vue-page"></div>
+
+
+	</div>
+		
+	</div>
+	</div>
+
+</div>
+
+<div id="customer-detail">
+
+	<div v-show="seen">
+	<!-- 返回按钮 -->
+	<div style="position: relative; top: 35px; left: 10px;">
+		<a @click="returnMain"><span class="glyphicon glyphicon-arrow-left" style="font-size: 20px; color: #DDDDDD"></span></a>
+	</div>
+
+	<!-- 大标题 -->
+	<div style="position: relative; left: 40px; top: -30px;">
+		<div class="page-header">
+			<h3>{{customer.name}} <small><a :href="customer.website" target="_blank">{{customer.website}}</a></small></h3>
+		</div>
+		<div style="position: relative; height: 50px; width: 500px;  top: -72px; left: 700px;">
+			<button type="button" class="btn btn-default" @click="openEditModal"><span class="glyphicon glyphicon-edit"></span> 编辑</button>
+			<button type="button" class="btn btn-danger" @click="deleteItem"><span class="glyphicon glyphicon-minus"></span> 删除</button>
+		</div>
+	</div>
+
+	<!-- 详细信息 -->
+	<div style="position: relative; top: -70px;">
+		<div style="position: relative; left: 40px; height: 30px;">
+			<div style="width: 300px; color: gray;">所有者</div>
+			<div style="width: 300px;position: relative; left: 200px; top: -20px;"><b>{{customer.owner}}</b></div>
+			<div style="width: 300px;position: absolute; left: 450px; top: 0; color: gray;">名称</div>
+			<div style="width: 300px;position: absolute; left: 650px; top: 0;"><b>{{customer.name}}</b></div>
+			<div style="height: 1px; width: 400px; background: #D5D5D5; position: absolute; top: 20px;"></div>
+			<div style="height: 1px; width: 400px; background: #D5D5D5; position: absolute; top: 20px; left: 450px;"></div>
+		</div>
+		<div style="position: relative; left: 40px; height: 30px; top: 10px;">
+			<div style="width: 300px; color: gray;">公司网站</div>
+			<div style="width: 300px;position: relative; left: 200px; top: -20px;"><b>{{customer.website}}</b></div>
+			<div style="width: 300px;position: absolute; left: 450px; top: 0; color: gray;">公司座机</div>
+			<div style="width: 300px;position: absolute; left: 650px; top: 0;"><b>{{customer.phone}}</b></div>
+			<div style="height: 1px; width: 400px; background: #D5D5D5; position: absolute; top: 20px;"></div>
+			<div style="height: 1px; width: 400px; background: #D5D5D5; position: absolute; top: 20px; left: 450px;"></div>
+		</div>
+		<div style="position: relative; left: 40px; height: 30px; top: 20px;">
+			<div style="width: 300px; color: gray;">创建者</div>
+			<div style="width: 500px;position: relative; left: 200px; top: -20px;"><b>{{customer.createby}}&nbsp;&nbsp;</b><small style="font-size: 10px; color: gray;">{{customer.createtime}}</small></div>
+			<div style="height: 1px; width: 550px; background: #D5D5D5; position: absolute; top: 20px;"></div>
+		</div>
+		<div style="position: relative; left: 40px; height: 30px; top: 30px;">
+			<div style="width: 300px; color: gray;">修改者</div>
+			<div style="width: 500px;position: relative; left: 200px; top: -20px;"><b>{{customer.editby}}&nbsp;&nbsp;</b><small style="font-size: 10px; color: gray;">{{customer.edittime}}</small></div>
+			<div style="height: 1px; width: 550px; background: #D5D5D5; position: absolute; top: 20px;"></div>
+		</div>
+		<div style="position: relative; left: 40px; height: 30px; top: 40px;">
+			<div style="width: 300px; color: gray;">联系纪要</div>
+			<div style="width: 630px;position: relative; left: 200px; top: -20px;">
+				<b>
+					{{customer.contactsummary}}
+				</b>
+			</div>
+			<div style="height: 1px; width: 850px; background: #D5D5D5; position: absolute; top: 20px;"></div>
+		</div>
+		<div style="position: relative; left: 40px; height: 30px; top: 50px;">
+			<div style="width: 300px; color: gray;">下次联系时间</div>
+			<div style="width: 300px;position: relative; left: 200px; top: -20px;"><b>{{customer.nextcontacttime}}</b></div>
+			<div style="height: 1px; width: 400px; background: #D5D5D5; position: absolute; top: 20px; "></div>
+		</div>
+		<div style="position: relative; left: 40px; height: 30px; top: 60px;">
+			<div style="width: 300px; color: gray;">描述</div>
+			<div style="width: 630px;position: relative; left: 200px; top: -20px;">
+				<b>
+					{{customer.description}}
+				</b>
+			</div>
+			<div style="height: 1px; width: 850px; background: #D5D5D5; position: absolute; top: 20px;"></div>
+		</div>
+		<div style="position: relative; left: 40px; height: 30px; top: 70px;">
+			<div style="width: 300px; color: gray;">详细地址</div>
+			<div style="width: 630px;position: relative; left: 200px; top: -20px;">
+				<b>
+					{{customer.address}}
+				</b>
+			</div>
+			<div style="height: 1px; width: 850px; background: #D5D5D5; position: absolute; top: 20px;"></div>
+		</div>
+	</div>
+
+	<!-- 备注 -->
+	<div style="position: relative; top: 10px; left: 40px;"  th:insert="workbench/modal/detail :: remark"></div>
+
+	<!-- 交易 -->
+	<div th:replace="workbench/modal/detail :: tran-simple-table"></div>
+
+	<!-- 联系人 -->
+	<div>
+		<div style="position: relative; top: 20px; left: 40px;">
+			<div class="page-header">
+				<h4>联系人</h4>
+			</div>
+			<div style="position: relative;top: 0px;">
+				<table id="activityTable" class="table table-hover" style="width: 900px;">
+					<thead>
+					<tr style="color: #B3B3B3;">
+						<td>名称</td>
+						<td>邮箱</td>
+						<td>手机</td>
+						<td></td>
+					</tr>
+					</thead>
+					<tbody>
+					<tr v-for="(item,i) in contactsList">
+						<td><a @click="openContactsDetail(item.id)" style="text-decoration: none;">{{item.fullname}}</a></td>
+						<td>{{item.email}}</td>
+						<td>{{item.mphone}}</td>
+						<td><a @click="deleteContacts(item.id)" style="text-decoration: none;"><span class="glyphicon glyphicon-remove"></span>删除</a></td>
+					</tr>
+					</tbody>
+				</table>
+			</div>
+
+			<div>
+				<a @click="openCreateContactsModal" style="text-decoration: none;"><span class="glyphicon glyphicon-plus"></span>新建联系人</a>
+			</div>
+		</div>
+	</div>
+
+	<div style="height: 200px;"></div>
+	</div>
+</div>
+
+<div th:replace="workbench/modal/alert :: alert-modal"></div>
+<div th:replace="workbench/modal/modal :: remark-modal"></div>
+<div th:replace="workbench/modal/modal :: contacts-modal"></div>
+<div th:replace="workbench/modal/modal :: activity-relation-modal"></div>
+<div th:replace="workbench/modal/modal :: activity-source-modal"></div>
+<div th:replace="workbench/modal/modal :: activity-modal"></div>
+<div th:replace="workbench/modal/detail :: contacts-detail"></div>
+<div th:replace="workbench/modal/detail :: activity-detail"></div>
+<div th:replace="workbench/modal/detail :: tran-detail"></div>
+<div th:replace="workbench/modal/detail :: tran-edit"></div>
+
+</body>
+
+<script type="text/javascript" src="workbench/js/util.js"></script>
+<script type="text/javascript" src="workbench/js/remarkModal.js"></script>
+<script type="text/javascript" src="workbench/js/activityRelationModal.js"></script>
+<script type="text/javascript" src="workbench/js/activityModal.js"></script>
+<script type="text/javascript" src="workbench/js/activitySourceModal.js"></script>
+<script type="text/javascript" src="workbench/js/contactsModal.js"></script>
+<script type="text/javascript" src="workbench/js/ContactsDetail.js"></script>
+<script type="text/javascript" src="workbench/js/ActivityDetail.js"></script>
+<script type="text/javascript" src="workbench/js/TranDetail.js"></script>
+<script type="text/javascript" src="workbench/js/TranEdit.js"></script>
+<script type="text/javascript" th:inline="javascript">
+	var View = {main : 1, detail : 2, tran : 3, contacts : 4, activity : 5, edit : 6}
+	var curView = {cur : View.main};
+	var customerDetail;
+	var contactsDetail = ContactsDetail([[${session.user.id}]]);
+	var tranEdit = TranEdit();
+	var tranDetail = TranDetail();
+	tranDetail.getSeen = function () {
+		return this.curView.cur === View.tran;
+	}
+	contactsDetail.getSeen = function () {
+		return this.curView.cur === View.contacts;
+	}
+	contactsDetail.returnMain = function () {
+		customerDetail.reflashContacts();
+		this.curView.cur = View.detail;
+	};
+	var activityDetail = ActivityDetail();
+	activityDetail.getSeen = function () {
+		return this.curView.cur === View.activity;
+	};
+	activityDetail.returnMain = function () {
+		contactsDetail.reflashRelation();
+		this.curView.cur = View.contacts;
+	};
+	var customerModal = new Vue({
+		el : "#customer-modal",
+		data : {
+			modalTitle : '创建客户',
+			modalUrl : '',
+			modalData : {
+				owner : '',
+				name : '',
+				website : '',
+				phone : '',
+				contactsummary : '',
+				nextcontacttime : '',
+				description : '',
+				address : '',
+			},
+		},
+		methods : {
+			changeVal : function (keys, $event) {
+				changeModelValue(this, keys, $event);
+			},
+			isLegal : function () {
+				if (this.modalData.owner == '') {
+					alertMsg('所有者不能是空！');
+					return false;
+				}
+				if (this.modalData.name == '') {
+					alertMsg('名称不能是空！');
+					return false;
+				}
+				return true;
+			},
+			success : function () {
+
+			},
+			modalSave : function () {
+				if (!this.isLegal()) {
+					return;
+				}
+				var _this = this;
+				$.ajax({
+					url : _this.modalUrl,
+					data: _this.modalData,
+					type : 'post',
+					success : function (data) {
+						alertMsg(data.msg);
+						$(_this.$el).modal('hide');
+						if (data.success) {
+							_this.success();
+						}
+					}
+				})
+			},
+			openCreateModal : function () {
+				this.modalTitle = "创建客户";
+				this.modalUrl = "workbench/customer/create";
+				for (key in this.modalData) {
+					this.modalData[key] = '';
+				}
+				this.modalData.owner = [[${session.user.id}]]
+				$(this.$el).modal('show');
+			},
+			openEditModal : function (id) {
+				this.modalTitle = "修改客户";
+				this.modalUrl = "workbench/customer/update";
+				var _this = this;
+				this.modalData.id = id;
+				$.ajax({
+					url : "workbench/customer/queryById",
+					data: {id : id},
+					type : 'get',
+					success : function (data) {
+						for (key in _this.modalData) {
+							_this.modalData[key] = data[key];
+						}
+						$(_this.$el).modal('show');
+					}
+				})
+			},
+		}
+	});
+	var customerMain = new Vue({
+		el : "#customer-main",
+		data : {
+			info : [[${info}]],
+			curView : curView,
+			checkedNames : [],
+			checkedAll : false,
+			queryData : {
+				name : '',
+				website : '',
+				phone : '',
+				owner : '',
+			},
+		},
+		computed : {
+			seen : function () {
+				return this.curView.cur == View.main;
+			},
+			offset : function () {
+				return this.info.pageNum <= 3 ? 0 : (this.info.pages - this.info.pageNum <= 2 ? this.info.pages - 5 : this.info.pageNum - 3);
+			},
+		},
+		methods : {
+			initCheck : function () {
+				this.checkedNames.length = 0;
+				this.checkedAll = false;
+			},
+			clickCheckItem : function () {
+				this.checkedAll = (this.checkedNames.length === this.info.list.length);
+			},
+			clickCheckAll : function () {
+				this.checkedNames.length = 0;
+				if (this.checkedAll) {
+					this.info.list.forEach(item=>{
+						this.checkedNames.push(item.id);
+					});
+				}
+			},
+			changeVal : function (keys, $event) {
+				changeModelValue(this, keys, $event);
+			},
+			updateTable : function (pageSize, pageNum) {
+				this.queryData.pageSize = pageSize;
+				this.queryData.pageNum = pageNum;
+				var _this = this;
+				$.ajax({
+					url : 'workbench/customer/query',
+					data: _this.queryData,
+					type : 'get',
+					success : function (data) {
+						_this.info = data;
+						_this.initCheck();
+					}
+				})
+			},
+			reflash : function () {
+				this.updateTable(this.info.pageSize, this.info.pageNum);
+			},
+			openCreateModal : function () {
+				customerModal.success = this.updateTable;
+				customerModal.openCreateModal();
+			},
+			openEditModal : function () {
+				if (this.checkedNames.length == 0) {
+					alertMsg("请选择要修改的数据");
+					return;
+				}
+				if (this.checkedNames.length > 1) {
+					alertMsg("一次只能修改一条数据");
+					return;
+				}
+				customerModal.success = this.updateTable;
+				customerModal.openEditModal(this.checkedNames[0]);
+			},
+			deleteData : function () {
+				if (this.checkedNames.length == 0) {
+					alertMsg('请选择需要删除的数据');
+				}
+				if(confirm("确定删除这"+ this.checkedNames.length +"条数据？")) {
+					var _this = this;
+					$.ajax({
+						url: "/workbench/customer/delete",
+						data: {ids : _this.checkedNames},
+						type: 'post',
+						success: function (data) {
+							alertMsg(data.msg);
+							if (data.success) {
+								_this.updateTable();
+							}
+						}
+					})
+				}
+			},
+			showDetail : function (id) {
+				customerDetail.id = id;
+				this.curView.cur = View.detail;
+			},
+		},
+	});
+	customerDetail = new Vue({
+		el : "#customer-detail",
+		data : {
+			id : '',
+			curView : curView,
+			remarkTitle : '联系人',
+			remarkFor : '',
+			newRemark : '',
+			remarkHeight : '90px',
+			remarkBtn : false,
+			customer : {},
+			remarkList : [],
+			tranList : [],
+			contactsList : [],
+		},
+		computed : {
+			seen : function () {
+				return this.curView.cur === View.detail;
+			}
+		},
+		watch : {
+			id : function () {
+				var _this = this;
+				$.ajax({
+					url : "workbench/customer/detail",
+					data: {id : this.id},
+					type : 'get',
+					success : function (data) {
+						_this.customer = data.customer;
+						_this.remarkList = data.remarkList;
+						_this.tranList = data.tranList;
+						_this.contactsList = data.contactsList;
+					}
+				})
+			},
+			contactsList : function () {
+				if (this.contactsList.length > 0) {
+					var contacts = this.contactsList[0];
+					this.remarkFor = contacts.fullname + contacts.appellation + "-" + contacts.customerid;
+				}
+			},
+		},
+		methods : {
+			changeVal : function (keys, $event) {
+				changeModelValue(this, keys, $event);
+			},
+			remarkDivMouseenter : function ($event) {
+				$($event.target).children("div").children("div").show();
+			},
+			remarkDivMouseleave : function ($event) {
+				$($event.target).children("div").children("div").hide();
+			},
+			hrefMouseenter : function ($event) {
+				$($event.target).children("span").css("color","red");
+			},
+			hrefMouseleave : function ($event) {
+				$($event.target).children("span").css("color","#E6E6E6");
+			},
+			addRemark : function () {
+				this.remarkHeight = "130px";
+				this.remarkBtn = true;
+			},
+			cancelSave : function () {
+				this.newRemark = '';
+				this.remarkHeight = "90px";
+				this.remarkBtn = false;
+			},
+			// 打开新建联系人模态窗口
+			openCreateContactsModal : function () {
+				contactsModal.openCreateModal();
+				contactsModal.success = this.reflashContacts;
+				contactsModal.modalData.owner = [[${session.user.id}]];
+				contactsModal.modalData.customerid = this.customer.name;
+				contactsModal.modalData.contactsummary = this.customer.contactsummary;
+				contactsModal.modalData.nextcontacttime = this.customer.nextcontacttime;
+				contactsModal.modalData.description = this.customer.description;
+				contactsModal.modalData.address = this.customer.address;
+			},
+			// 打开修改客户窗口
+			openEditModal : function () {
+				customerModal.success = this.reflash;
+				customerModal.openEditModal(this.id);
+			},
+			// 打开修改备注窗口
+			openEditRemarkModal : function (id) {
+				var _this = this;
+				for (var item of this.remarkList) {
+					if (item.id == id) {
+						remarkModal.success = _this.reflashRemark;
+						remarkModal.openModal(id, item.notecontent, "workbench/customerRemark/update");
+						break;
+					}
+				}
+			},
+			// 刷新备注表
+			reflashRemark : function () {
+				var _this = this;
+				$.ajax({
+					url : "workbench/customerRemark/queryByCustomerId",
+					data: {id : this.id},
+					type : 'get',
+					success : function (data) {
+						_this.remarkList = data;
+					}
+				})
+			},
+			// 刷新客户表
+			reflash : function () {
+				var _this = this;
+				$.ajax({
+					url : "workbench/customer/queryById/visible",
+					data: {id : this.id},
+					type : 'get',
+					success : function (data) {
+						_this.customer = data;
+					}
+				})
+			},
+			// 刷新交易表
+			reflashTran : function () {
+				var _this = this;
+				$.ajax({
+					url : "workbench/tran/queryByCustomerId",
+					data: {id : this.id},
+					type : 'get',
+					success : function (data) {
+						_this.tranList = data;
+					}
+				})
+			},
+			// 刷新联系人表
+			reflashContacts : function () {
+				var _this = this;
+				$.ajax({
+					url : "workbench/contacts/queryByCustomerId",
+					data: {id : this.id},
+					type : 'get',
+					success : function (data) {
+						_this.contactsList = data;
+					}
+				})
+			},
+			// 删除客户
+			deleteItem : function () {
+				if(confirm("确定删除这条数据？")) {
+					var _this = this;
+					$.ajax({
+						url: "workbench/customer/delete",
+						data: {ids : [_this.id]},
+						type: 'post',
+						success: function (data) {
+							alertMsg(data.msg);
+							if (data.success) {
+								_this.returnMain();
+							}
+						}
+					})
+				}
+			},
+			// 删除交易
+			deleteTran : function (id) {
+				var _this = this;
+				$.ajax({
+					url: "workbench/tran/delete",
+					data: {ids : [id]},
+					type: 'post',
+					success: function (data) {
+						if (data.success) {
+							_this.reflashTran();
+						}
+					}
+				})
+			},
+			// 删除联系人
+			deleteContacts : function (id) {
+				var _this = this;
+				$.ajax({
+					url: "workbench/contacts/delete",
+					data: {ids : [id]},
+					type: 'post',
+					success: function (data) {
+						if (data.success) {
+							_this.reflashContacts();
+						}
+					}
+				})
+			},
+			// 删除备注
+			deleteRemark : function (id) {
+				var _this = this;
+				$.ajax({
+					url : "workbench/customerRemark/delete",
+					data: {id : id},
+					type : 'get',
+					success : function (data) {
+						if (data.success) {
+							_this.reflashRemark();
+						}
+					}
+				})
+			},
+			// 保存备注
+			saveRemark : function () {
+				var _this = this;
+				$.ajax({
+					url : "workbench/customerRemark/create",
+					data: {notecontent : this.newRemark, customerid : this.id},
+					type : 'get',
+					success : function (data) {
+						if (data.success) {
+							_this.reflashRemark();
+							_this.cancelSave();
+						}
+					}
+				})
+			},
+			// 返回主界面
+			returnMain : function () {
+				customerMain.reflash();
+				this.curView.cur = View.main;
+			},
+			// 跳转到交易信息界面
+			openTranDetail : function (id) {
+				var _this = this;
+				tranDetail.id = id;
+				tranDetail.last = this.curView.cur;
+				tranDetail.returnMain = function () {
+					_this.reflashTran();
+					tranDetail.curView.cur = tranDetail.last;
+				}
+				this.curView.cur = View.tran;
+			},
+			// 跳转到联系人信息界面
+			openContactsDetail : function (id) {
+				contactsDetail.id = id;
+				this.curView.cur = View.contacts;
+			},
+			// 跳转到新建交易信息界面
+			openCreateTran : function () {
+				var _this = this;
+				tranEdit.last = this.curView.cur;
+				tranEdit.success = function () {
+					_this.reflashTran();
+					tranEdit.curView.cur = tranEdit.last;
+				}
+				this.curView.cur = View.edit;
+				tranEdit.openCreateModal();
+				tranEdit.modalData.customerid = this.customer.name;
+				tranEdit.modalData.owner = [[${session.user.id}]];
+				if (this.contactsList.length > 0) {
+					var contacts = this.contactsList[0];
+					tranEdit.modalData.contactsid = contacts.id;
+					tranEdit.contactsName = contacts.fullname;
+				}
+			},
+		}
+	});
+</script>
+
+</html>

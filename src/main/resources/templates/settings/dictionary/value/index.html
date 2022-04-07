@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="UTF-8">
+	<base th:href="${#request.getContextPath()}+'/'">
+	<link href="jquery/bootstrap_3.3.0/css/bootstrap.min.css" type="text/css" rel="stylesheet" />
+
+	<script type="text/javascript" src="jquery/jquery-1.11.1-min.js"></script>
+	<script type="text/javascript" src="jquery/bootstrap_3.3.0/js/bootstrap.min.js"></script>
+	<script type="text/javascript">
+		$(function () {
+			$('#close').click(function () {
+				$('#reset').click();
+			});
+		})
+		// 打开新增
+		function createModel() {
+			$('#title').html('新增字典值');
+			$('#reset').click();
+			$('#create-msg').html('');
+			$('#create-dicTypeCode').attr('readonly',false);
+			$('#dictValueModal').modal('show');
+			$('#save').unbind("click").click(function () {
+				if ($('#create-dicTypeCode').val() == '') {
+					$('#create-msg').html('字典编码不能为空');
+					return;
+				}
+				if ($('#create-dicValue').val() == '') {
+					$('#create-msg').html('字典值不能为空');
+					return;
+				}
+				$.ajax({
+					url : 'settings/value/create',
+					data:{"typecode" : $('#create-dicTypeCode').val(),
+						"value" : $('#create-dicValue').val(),
+						"text" : $('#create-text').val(),
+						"orderno" : $('#create-orderNo').val()},
+					type : 'post',
+					success : function (data) {
+						if (data.success) {
+							$('#close').click();
+							$('#table').load("settings/value/init #table")
+							alertMsg(data.msg);
+						} else {
+							$('#create-msg').html(data.msg);
+						}
+					}
+				})
+			});
+		}
+		// 打开修改
+		function editModel() {
+			var input_check = $("input[name=ck]:checked");
+			var length = input_check.length;
+			if (length == 0) {
+				alertMsg("请选择需要修改的数据!");
+				return;
+			}
+			if (length >= 2) {
+				alertMsg("一次只能修改一条数据!");
+				return;
+			}
+			$.ajax({
+				url : 'settings/value/queryById',
+				data:{"id" : input_check.val()},
+				type : 'get',
+				success : function (data) {
+					$('#create-dicTypeCode').val(data.typecode);
+					$('#create-dicValue').val(data.value);
+					$('#create-text').val(data.text);
+					$('#create-orderNo').val(data.orderno);
+					// 打开模态窗口并赋值
+					$('#title').html('修改字典值');
+					$('#create-msg').val('');
+					$('#create-dicTypeCode').attr('readonly',true);
+					$('#dictValueModal').modal('show');
+					// 修改-保存按钮事件
+					$('#save').unbind("click").click(function () {
+						if ($('#create-dicValue').val() == "") {
+							$('#create-msg').html("字典值不能为空");
+							return;
+						}
+						$.ajax({
+							url : 'settings/value/update',
+							data:{"id" : input_check.val(),
+								"typecode" : $('#create-dicTypeCode').val(),
+								"value" : $('#create-dicValue').val(),
+								"text" : $('#create-text').val(),
+								"orderno" : $('#create-orderNo').val()},
+							type : 'post',
+							success : function (data) {
+								if (data.success) {
+									$('#close').click();
+									$('#table').load("settings/value/init #table")
+									alertMsg(data.msg);
+								} else {
+									$('#create-msg').html(data.msg);
+								}
+							}
+						})
+					});
+				}
+			})
+
+		}
+		// 弹出提示窗口
+		function alertMsg(msg) {
+			$('#alert-body').html(msg);
+			$('#alertModal').modal('show');
+		}
+		// 删除函数
+		function deleteData() {
+			var input_check = $("input[name=ck]:checked");
+			var length = input_check.length;
+			if (length == 0) {
+				alertMsg("请选择需要删除的数据!");
+				return;
+			}
+			if(confirm("确定删除这"+ length +"条数据？")) {
+				var lst = new Array();
+				$.each(input_check,function (index,item) {
+					lst.push($(item).val());
+				});
+				$.ajax({
+					url : 'settings/value/delete',
+					data:{"ids" : lst},
+					type : 'post',
+					success : function (data) {
+						alertMsg(data.msg);
+						if (data.success) {
+							$('#table').load("settings/value/init #table")
+						}
+					}
+				})
+			}
+		}
+		function allClick() {
+			//取得全选复选框的选中未选 中状态
+			var ischeck=$("#all").prop("checked");
+			//将此状态赋值给每个商品列表里的复选框
+			$("input[name=ck]").each(function () {
+				this.checked=ischeck;
+			});
+		}
+		function ckClick() {
+			//取得所有name=ck的被选中的复选框
+			var length=$("input[name=ck]:checked").length;
+			//取得所有name=ck的复选框
+			var len=$("input[name=ck]").length;
+			//比较
+			if(len == length){
+				$("#all").prop("checked",true);
+			}else
+			{
+				$("#all").prop("checked",false);
+			}
+		}
+	</script>
+</head>
+<body>
+
+	<div>
+		<div style="position: relative; left: 30px; top: -10px;">
+			<div class="page-header">
+				<h3>字典值列表</h3>
+			</div>
+		</div>
+	</div>
+	<div class="btn-toolbar" role="toolbar" style="background-color: #F7F7F7; height: 50px; position: relative;left: 30px;">
+		<div class="btn-group" style="position: relative; top: 18%;">
+		  <button type="button" class="btn btn-primary" onclick="createModel()"><span class="glyphicon glyphicon-plus"></span> 创建</button>
+		  <button type="button" class="btn btn-default" onclick="editModel()"><span class="glyphicon glyphicon-edit"></span> 编辑</button>
+		  <button type="button" class="btn btn-danger" onclick="deleteData()"><span class="glyphicon glyphicon-minus"></span> 删除</button>
+		</div>
+	</div>
+	<div style="position: relative; left: 30px; top: 20px;" id="table">
+		<table class="table table-hover">
+			<thead>
+				<tr style="color: #B3B3B3;">
+					<td><input type="checkbox"  id="all" onclick="allClick()"/></td>
+					<td>序号</td>
+					<td>字典值</td>
+					<td>文本</td>
+					<td>排序号</td>
+					<td>字典类型编码</td>
+				</tr>
+			</thead>
+			<tbody>
+				<tr th:each="item:${dicValue}" th:class="${itemStat.odd ? 'active' : ''}">
+					<td><input type="checkbox" name="ck" onclick="ckClick()" th:value="${item.id}"/></td>
+					<td th:text="${itemStat.count}">1</td>
+					<td th:text="${item.value}">m</td>
+					<td th:text="${item.text}">男</td>
+					<td th:text="${item.orderno}">1</td>
+					<td th:text="${item.typecode}">sex</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+
+	<div class="modal fade" id="dictValueModal" role="dialog">
+		<div class="modal-dialog" role="document" style="width: 90%;">
+			<div class="modal-content">
+				<div style="position:  relative; left: 30px;">
+					<h3 id="title">新增字典值</h3>
+					<div style="position: relative; top: -40px; left: 70%;">
+						<div>
+							<label id="create-msg" style="color: red"></label>
+						</div>
+						<button type="button" class="btn btn-primary" id="save">保存</button>
+						<button type="button" class="btn btn-default" data-dismiss="modal" id="close">取消</button>
+					</div>
+					<hr style="position: relative; top: -40px;">
+				</div>
+				<form class="form-horizontal" role="form">
+
+					<div class="form-group">
+						<label for="create-dicTypeCode" class="col-sm-2 control-label">字典类型编码<span style="font-size: 15px; color: red;">*</span></label>
+						<div class="col-sm-10" style="width: 300px;">
+							<select class="form-control" id="create-dicTypeCode" style="width: 200%;">
+								<option value=""></option>
+								<option th:each="item:${dicType}" th:value="${item.code}" th:text="${item.name}"></option>
+							</select>
+						</div>
+					</div>
+
+					<div class="form-group">
+						<label for="create-dicValue" class="col-sm-2 control-label">字典值<span style="font-size: 15px; color: red;">*</span></label>
+						<div class="col-sm-10" style="width: 300px;">
+							<input type="text" class="form-control" id="create-dicValue" style="width: 200%;">
+						</div>
+					</div>
+
+					<div class="form-group">
+						<label for="create-text" class="col-sm-2 control-label">文本</label>
+						<div class="col-sm-10" style="width: 300px;">
+							<input type="text" class="form-control" id="create-text" style="width: 200%;">
+						</div>
+					</div>
+
+					<div class="form-group">
+						<label for="create-orderNo" class="col-sm-2 control-label">排序号</label>
+						<div class="col-sm-10" style="width: 300px;">
+							<input type="text" class="form-control" id="create-orderNo" style="width: 200%;">
+						</div>
+					</div>
+					<input type="reset" style="display: none" id="reset">
+				</form>
+
+				<div style="height: 200px;"></div>
+			</div>
+		</div>
+	</div>
+
+
+	<!--警告窗口-->
+	<div class="modal fade" id="alertModal" tabindex="-1" aria-labelledby="alertModalLabel" aria-hidden="true">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h2 class="modal-title" id="alertModalLabel">提示</h2>
+				</div>
+				<div class="modal-body" >
+					<p id="alert-body" style="color: red"></p>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">确定</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	
+</body>
+</html>

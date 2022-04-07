@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="en"  xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<base th:href="${#request.getContextPath()}+'/'">
+<link href="jquery/bootstrap_3.3.0/css/bootstrap.min.css" type="text/css" rel="stylesheet" />
+<link href="jquery/bootstrap-datetimepicker-master/css/bootstrap-datetimepicker.min.css" type="text/css" rel="stylesheet" />
+
+<script type="text/javascript" src="jquery/jquery-1.11.1-min.js"></script>
+<script type="text/javascript" src="jquery/bootstrap_3.3.0/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="jquery/bootstrap-datetimepicker-master/js/bootstrap-datetimepicker.js"></script>
+<script type="text/javascript" src="jquery/bootstrap-datetimepicker-master/locale/bootstrap-datetimepicker.zh-CN.js"></script>
+	<script type="text/javascript" src="jquery/vue.js"></script>
+	<script type="text/javascript">
+
+		$(function(){
+			$(".date").datetimepicker({
+				language:  "zh-CN",
+				format: "yyyy-mm-dd",//显示格式
+				minView: "month",//设置只显示到月份
+				initialDate: new Date(),//初始化当前日期
+				autoclose: true,//选中自动关闭
+				todayBtn: true, //显示今日按钮
+				clearBtn : true,
+				pickerPosition: "bottom-left"
+			});
+			$('.date').datetimepicker().on('hide', function () {
+				$(this).click();
+			});
+
+		});
+
+	</script>
+</head>
+<body>
+
+<div id="clue-main" v-show="seen">
+	<div>
+		<div style="position: relative; left: 10px; top: -10px;">
+			<div class="page-header">
+				<h3>线索列表</h3>
+			</div>
+		</div>
+	</div>
+	
+	<div style="position: relative; top: -20px; left: 0px; width: 100%; height: 100%;">
+	
+		<div style="width: 100%; position: absolute;top: 5px; left: 10px;">
+			<!--查询条件-->
+			<div class="btn-toolbar" role="toolbar" style="height: 80px;">
+				<form class="form-inline" role="form" style="position: relative;top: 8%; left: 5px;">
+				  
+				  <div class="form-group">
+				    <div class="input-group">
+				      <div class="input-group-addon">名称</div>
+				      <input class="form-control" type="text" id="query-fullname" v-model="queryData.fullname">
+				    </div>
+				  </div>
+				  
+				  <div class="form-group">
+				    <div class="input-group">
+				      <div class="input-group-addon">公司</div>
+				      <input class="form-control" type="text" id="query-company" v-model="queryData.company">
+				    </div>
+				  </div>
+				  
+				  <div class="form-group">
+				    <div class="input-group">
+				      <div class="input-group-addon">公司座机</div>
+				      <input class="form-control" type="text" id="query-phone" v-model="queryData.phone">
+				    </div>
+				  </div>
+				  
+				  <div class="form-group">
+				    <div class="input-group">
+				      <div class="input-group-addon">线索来源</div>
+					  <select class="form-control" id="query-source" v-model="queryData.source">
+					  	  <option selected></option>
+					  	  <option th:each="item:${#servletContext.getAttribute('dicMap')['source']}"
+								  th:value="${item.key}" th:text="${item.value.text}">广告</option>
+					  </select>
+				    </div>
+				  </div>
+				  
+				  <br>
+				  
+				  <div class="form-group">
+				    <div class="input-group">
+				      <div class="input-group-addon">所有者</div>
+						<select class="form-control" v-model="queryData.owner">
+							<option value=""></option>
+							<option th:each="user:${#servletContext.getAttribute('userMap')}" th:value="${user.key}"
+									th:text="${user.value.name}"></option>
+						</select>
+				    </div>
+				  </div>
+				  
+				  
+				  
+				  <div class="form-group">
+				    <div class="input-group">
+				      <div class="input-group-addon">手机</div>
+				      <input class="form-control" type="text" id="query-mphone" v-model="queryData.mphone">
+				    </div>
+				  </div>
+				  
+				  <div class="form-group">
+				    <div class="input-group">
+				      <div class="input-group-addon">线索状态</div>
+					  <select class="form-control" id="query-state" v-model="queryData.state">
+					  	<option></option>
+					  	<option th:each="item:${#servletContext.getAttribute('dicMap')['clueState']}"
+								th:value="${item.key}" th:text="${item.value.text}">试图联系</option>
+					  </select>
+				    </div>
+				  </div>
+
+				  <button type="button" class="btn btn-default" @click="updateTable(info.pageSize, info.pageNum)">查询</button>
+				  
+				</form>
+			</div>
+			<!--按钮组-->
+			<div class="btn-toolbar" role="toolbar" style="background-color: #F7F7F7; height: 50px; position: relative;top: 40px;">
+				<div class="btn-group" style="position: relative; top: 18%;">
+					<button type="button" class="btn btn-primary" @click="openCreateModal"><span class="glyphicon glyphicon-plus"></span> 创建</button>
+					<button type="button" class="btn btn-default" @click="openEditModal"><span class="glyphicon glyphicon-pencil"></span> 修改</button>
+					<button type="button" class="btn btn-danger" @click="deleteData"><span class="glyphicon glyphicon-minus"></span> 删除</button>
+				</div>
+				
+				
+			</div>
+
+			<div id="table">
+				<!--表格-->
+				<div style="position: relative;top: 50px;">
+					<table class="table table-hover">
+						<thead>
+							<tr style="color: #B3B3B3;">
+								<td><input type="checkbox" v-model="checkedAll" @change="clickCheckAll"/></td>
+								<td>名称</td>
+								<td>公司</td>
+								<td>公司座机</td>
+								<td>手机</td>
+								<td>线索来源</td>
+								<td>所有者</td>
+								<td>线索状态</td>
+							</tr>
+						</thead>
+						<tbody>
+							<tr v-for="(item,i) in info.list" :class="{active : i%2 == 0}">
+								<td><input type="checkbox" :value="item.id" v-model="checkedNames" @change="clickCheckItem"/></td>
+								<td><a style="text-decoration: none; cursor: pointer;" @click="showDetail(item.id)">{{item.fullname + item.appellation}}</a></td>
+								<td>{{item.company}}</td>
+								<td>{{item.phone}}</td>
+								<td>{{item.mphone}}</td>
+								<td>{{item.source}}</td>
+								<td>{{item.owner}}</td>
+								<td>{{item.state}}</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+				<!--分页 页码-->
+				<div style="height: 50px; position: relative;top: 60px;" th:insert="workbench/modal/page :: vue-page">
+				</div>
+			</div>
+		</div>
+		
+	</div>
+</div>
+
+<div id="clue-detail" style="display: none" v-show="seen">
+	<!-- 返回按钮 -->
+	<div style="position: relative; top: 35px; left: 10px;">
+		<a @click="returnMain"><span class="glyphicon glyphicon-arrow-left" style="font-size: 20px; color: #DDDDDD"></span></a>
+	</div>
+
+	<!-- 大标题 -->
+	<div style="position: relative; left: 40px; top: -30px;">
+		<div class="page-header">
+			<h3><b>{{clue.fullname + clue.appellation}}</b> <small>{{clue.company}}</small></h3>
+		</div>
+		<div style="position: relative; height: 50px; width: 500px;  top: -72px; left: 700px;">
+			<button type="button" class="btn btn-default" @click="openConvert"><span class="glyphicon glyphicon-retweet"></span> 转换</button>
+			<button type="button" class="btn btn-default" @click="openEditModal"><span class="glyphicon glyphicon-edit"></span> 编辑</button>
+			<button type="button" class="btn btn-danger" @click="deleteItem"><span class="glyphicon glyphicon-minus"></span> 删除</button>
+		</div>
+	</div>
+
+	<!-- 详细信息 -->
+	<div style="position: relative; top: -70px;">
+		<div style="position: relative; left: 40px; height: 30px;">
+			<div style="width: 300px; color: gray;">名称</div>
+			<div style="width: 300px;position: relative; left: 200px; top: -20px;"><b>{{clue.fullname + clue.appellation}}</b></div>
+			<div style="width: 300px;position: absolute; left: 450px; top: 0; color: gray;">所有者</div>
+			<div style="width: 300px;position: absolute; left: 650px; top: 0;"><b>{{clue.owner}}</b></div>
+			<div style="height: 1px; width: 400px; background: #D5D5D5; position: absolute; top: 20px;"></div>
+			<div style="height: 1px; width: 400px; background: #D5D5D5; position: absolute; top: 20px; left: 450px;"></div>
+		</div>
+		<div style="position: relative; left: 40px; height: 30px; top: 10px;">
+			<div style="width: 300px; color: gray;">公司</div>
+			<div style="width: 300px;position: relative; left: 200px; top: -20px;"><b>{{clue.company}}</b></div>
+			<div style="width: 300px;position: absolute; left: 450px; top: 0; color: gray;">职位</div>
+			<div style="width: 300px;position: absolute; left: 650px; top: 0;"><b>{{clue.job}}</b></div>
+			<div style="height: 1px; width: 400px; background: #D5D5D5; position: absolute; top: 20px;"></div>
+			<div style="height: 1px; width: 400px; background: #D5D5D5; position: absolute; top: 20px; left: 450px;"></div>
+		</div>
+		<div style="position: relative; left: 40px; height: 30px; top: 20px;">
+			<div style="width: 300px; color: gray;">邮箱</div>
+			<div style="width: 300px;position: relative; left: 200px; top: -20px;"><b>{{clue.email}}</b></div>
+			<div style="width: 300px;position: absolute; left: 450px; top: 0; color: gray;">公司座机</div>
+			<div style="width: 300px;position: absolute; left: 650px; top: 0;"><b>{{clue.phone}}</b></div>
+			<div style="height: 1px; width: 400px; background: #D5D5D5; position: absolute; top: 20px;"></div>
+			<div style="height: 1px; width: 400px; background: #D5D5D5; position: absolute; top: 20px; left: 450px;"></div>
+		</div>
+		<div style="position: relative; left: 40px; height: 30px; top: 30px;">
+			<div style="width: 300px; color: gray;">公司网站</div>
+			<div style="width: 300px;position: relative; left: 200px; top: -20px;"><b>{{clue.website}}</b></div>
+			<div style="width: 300px;position: absolute; left: 450px; top: 0; color: gray;">手机</div>
+			<div style="width: 300px;position: absolute; left: 650px; top: 0;"><b>{{clue.mphone}}</b></div>
+			<div style="height: 1px; width: 400px; background: #D5D5D5; position: absolute; top: 20px;"></div>
+			<div style="height: 1px; width: 400px; background: #D5D5D5; position: absolute; top: 20px; left: 450px;"></div>
+		</div>
+		<div style="position: relative; left: 40px; height: 30px; top: 40px;">
+			<div style="width: 300px; color: gray;">线索状态</div>
+			<div style="width: 300px;position: relative; left: 200px; top: -20px;"><b>{{clue.state}}</b></div>
+			<div style="width: 300px;position: absolute; left: 450px; top: 0; color: gray;">线索来源</div>
+			<div style="width: 300px;position: absolute; left: 650px; top: 0;"><b>{{clue.source}}</b></div>
+			<div style="height: 1px; width: 400px; background: #D5D5D5; position: absolute; top: 20px;"></div>
+			<div style="height: 1px; width: 400px; background: #D5D5D5; position: absolute; top: 20px; left: 450px;"></div>
+		</div>
+		<div style="position: relative; left: 40px; height: 30px; top: 50px;">
+			<div style="width: 300px; color: gray;">创建者</div>
+			<div style="width: 500px;position: relative; left: 200px; top: -20px;"><b><b>{{clue.createby}}</b>&nbsp;&nbsp;</b><small style="font-size: 10px; color: gray;">{{clue.createtime}}</small></div>
+			<div style="height: 1px; width: 550px; background: #D5D5D5; position: absolute; top: 20px;"></div>
+		</div>
+		<div style="position: relative; left: 40px; height: 30px; top: 60px;">
+			<div style="width: 300px; color: gray;">修改者</div>
+			<div style="width: 500px;position: relative; left: 200px; top: -20px;"><b><b>{{clue.editby}}</b>&nbsp;&nbsp;</b><small style="font-size: 10px; color: gray;">{{clue.edittime}}</small></div>
+			<div style="height: 1px; width: 550px; background: #D5D5D5; position: absolute; top: 20px;"></div>
+		</div>
+		<div style="position: relative; left: 40px; height: 30px; top: 70px;">
+			<div style="width: 300px; color: gray;">描述</div>
+			<div style="width: 630px;position: relative; left: 200px; top: -20px;">
+				<b>
+					{{clue.description}}
+				</b>
+			</div>
+			<div style="height: 1px; width: 850px; background: #D5D5D5; position: absolute; top: 20px;"></div>
+		</div>
+		<div style="position: relative; left: 40px; height: 30px; top: 80px;">
+			<div style="width: 300px; color: gray;">联系纪要</div>
+			<div style="width: 630px;position: relative; left: 200px; top: -20px;">
+				<b>
+					{{clue.contactsummary}}
+				</b>
+			</div>
+			<div style="height: 1px; width: 850px; background: #D5D5D5; position: absolute; top: 20px;"></div>
+		</div>
+		<div style="position: relative; left: 40px; height: 30px; top: 90px;">
+			<div style="width: 300px; color: gray;">下次联系时间</div>
+			<div style="width: 300px;position: relative; left: 200px; top: -20px;"><b>{{clue.nextcontacttime}}</b></div>
+			<div style="height: 1px; width: 400px; background: #D5D5D5; position: absolute; top: 20px; "></div>
+		</div>
+		<div style="position: relative; left: 40px; height: 30px; top: 100px;">
+			<div style="width: 300px; color: gray;">详细地址</div>
+			<div style="width: 630px;position: relative; left: 200px; top: -20px;">
+				<b>
+					{{clue.address}}
+				</b>
+			</div>
+			<div style="height: 1px; width: 850px; background: #D5D5D5; position: absolute; top: 20px;"></div>
+		</div>
+	</div>
+
+
+	<div style="position: relative; top: 40px; left: 40px;" th:insert="workbench/modal/detail :: remark"></div>
+
+	<div id="clue-relation">
+		<!-- 市场活动 -->
+		<div>
+			<div style="position: relative; top: 60px; left: 40px;">
+				<div class="page-header">
+					<h4>市场活动</h4>
+				</div>
+				<div style="position: relative;top: 0px;">
+					<table class="table table-hover" style="width: 900px;">
+						<thead>
+						<tr style="color: #B3B3B3;">
+							<td>名称</td>
+							<td>开始日期</td>
+							<td>结束日期</td>
+							<td>所有者</td>
+							<td></td>
+						</tr>
+						</thead>
+						<tbody>
+							<tr v-for="(item,i) in activityList">
+								<td>{{item.name}}</td>
+								<td>{{item.startdate}}</td>
+								<td>{{item.enddate}}</td>
+								<td>{{item.name}}</td>
+								<td><a @click="deleteRelation(item.id);"  style="text-decoration: none;"><span class="glyphicon glyphicon-remove"></span>解除关联</a></td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+
+				<div>
+					<a @click="openRelationModal" style="text-decoration: none;"><span class="glyphicon glyphicon-plus"></span>关联市场活动</a>
+				</div>
+			</div>
+		</div>
+	</div>
+
+
+	<div style="height: 200px;"></div>
+
+</div>
+
+<div id="clue-convert" v-show="seen">
+	<div id="title" class="page-header" style="position: relative; left: 20px;">
+		<h4>转换线索 <small>{{clue.fullname + clue.appellation}}-{{clue.company}}</small></h4>
+	</div>
+	<div id="create-customer" style="position: relative; left: 40px; height: 35px;">
+		新建客户：<b>{{clue.company}}</b>
+	</div>
+	<div id="create-contact" style="position: relative; left: 40px; height: 35px;">
+		新建联系人：<b>{{clue.fullname + clue.appellation}}</b>
+	</div>
+	<div id="create-transaction1" style="position: relative; left: 40px; height: 35px; top: 25px;">
+		<input type="checkbox" v-model="tranData.hasTran"/>
+		为客户创建交易
+	</div>
+	<div id="create-transaction2" style="position: relative; left: 40px; top: 20px; width: 80%; background-color: #F7F7F7;" v-show="tranData.hasTran">
+
+		<form>
+			<div class="form-group" style="width: 400px; position: relative; left: 20px;">
+				<label for="amountOfMoney">金额</label>
+				<input type="text" class="form-control" id="amountOfMoney" v-model="tranData.money">
+			</div>
+			<div class="form-group" style="width: 400px;position: relative; left: 20px;">
+				<label for="tradeName">交易名称</label>
+				<input type="text" class="form-control" id="tradeName" v-model="tranData.name">
+			</div>
+			<div class="form-group" style="width: 400px;position: relative; left: 20px;">
+				<label for="expectedClosingDate">预计成交日期</label>
+				<input type="text" class="form-control date" id="expectedClosingDate"
+					   v-model="tranData.expecteddate" @click="changeVal(['tranData', 'expecteddate'],$event)">
+			</div>
+			<div class="form-group" style="width: 400px;position: relative; left: 20px;">
+				<label for="stage">阶段</label>
+				<select id="stage"  class="form-control" v-model="tranData.stage">
+					<option></option>
+					<option th:each="item:${#servletContext.getAttribute('dicMap')['stage']}"
+							th:value="${item.key}" th:text="${item.value.text}">资质审查</option>
+				</select>
+			</div>
+			<div class="form-group" style="width: 400px;position: relative; left: 20px;">
+				<label for="activity">市场活动源&nbsp;&nbsp;<a @click="openSourceModal" style="text-decoration: none;"><span class="glyphicon glyphicon-search"></span></a></label>
+				<input type="text" class="form-control" id="activity" placeholder="点击上面搜索" readonly v-model="activityName">
+			</div>
+		</form>
+
+	</div>
+
+	<div id="owner" style="position: relative; left: 40px; height: 35px; top: 50px;">
+		记录的所有者：<br>
+		<b>{{clue.owner}}</b>
+	</div>
+	<div id="operation" style="position: relative; left: 40px; height: 35px; top: 100px;">
+		<input class="btn btn-primary" type="button" value="转换" @click="saveConvert">
+		&nbsp;&nbsp;&nbsp;&nbsp;
+		<input class="btn btn-default" type="button" value="取消" @click="returnMain">
+	</div>
+</div>
+
+<!--添加修改模态窗口-->
+<div class="modal fade" id="clue-modal" role="dialog">
+	<div class="modal-dialog" role="document" style="width: 90%;">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal">
+					<span aria-hidden="true">×</span>
+				</button>
+				<h4 class="modal-title" id="modal-label">创建线索</h4>
+			</div>
+			<div class="modal-body">
+				<form class="form-horizontal" role="form">
+
+					<div class="form-group">
+						<label for="modal-clueOwner" class="col-sm-2 control-label">所有者<span style="font-size: 15px; color: red;">*</span></label>
+						<div class="col-sm-10" style="width: 300px;">
+							<select class="form-control" id="modal-clueOwner" v-model="modalData.owner">
+								<option th:each="user:${#servletContext.getAttribute('userMap')}" th:value="${user.key}"
+										th:text="${user.value.name}"></option>
+							</select>
+						</div>
+						<label for="modal-company" class="col-sm-2 control-label">公司<span style="font-size: 15px; color: red;">*</span></label>
+						<div class="col-sm-10" style="width: 300px;">
+							<input type="text" class="form-control" id="modal-company"  v-model="modalData.company">
+						</div>
+					</div>
+
+					<div class="form-group">
+						<label for="modal-call" class="col-sm-2 control-label">称呼</label>
+						<div class="col-sm-10" style="width: 300px;">
+							<select class="form-control" id="modal-call"  v-model="modalData.appellation">
+								<option></option>
+								<option th:each="item:${#servletContext.getAttribute('dicMap')['appellation']}"
+										th:value="${item.key}" th:text="${item.value.text}">广告</option>
+							</select>
+						</div>
+						<label for="modal-surname" class="col-sm-2 control-label">姓名<span style="font-size: 15px; color: red;">*</span></label>
+						<div class="col-sm-10" style="width: 300px;">
+							<input type="text" class="form-control" id="modal-surname"  v-model="modalData.fullname">
+						</div>
+					</div>
+
+					<div class="form-group">
+						<label for="modal-job" class="col-sm-2 control-label">职位</label>
+						<div class="col-sm-10" style="width: 300px;">
+							<input type="text" class="form-control" id="modal-job" v-model="modalData.job">
+						</div>
+						<label for="modal-email" class="col-sm-2 control-label">邮箱</label>
+						<div class="col-sm-10" style="width: 300px;">
+							<input type="text" class="form-control" id="modal-email" v-model="modalData.email">
+						</div>
+					</div>
+
+					<div class="form-group">
+						<label for="modal-phone" class="col-sm-2 control-label">公司座机</label>
+						<div class="col-sm-10" style="width: 300px;">
+							<input type="text" class="form-control" id="modal-phone" v-model="modalData.phone">
+						</div>
+						<label for="modal-website" class="col-sm-2 control-label">公司网站</label>
+						<div class="col-sm-10" style="width: 300px;">
+							<input type="text" class="form-control" id="modal-website" v-model="modalData.website">
+						</div>
+					</div>
+
+					<div class="form-group">
+						<label for="modal-mphone" class="col-sm-2 control-label">手机</label>
+						<div class="col-sm-10" style="width: 300px;">
+							<input type="text" class="form-control" id="modal-mphone" v-model="modalData.mphone">
+						</div>
+						<label for="modal-status" class="col-sm-2 control-label">线索状态</label>
+						<div class="col-sm-10" style="width: 300px;">
+							<select class="form-control" id="modal-status" v-model="modalData.state">
+								<option th:each="item:${#servletContext.getAttribute('dicMap')['clueState']}"
+										th:value="${item.key}" th:text="${item.value.text}"></option>
+							</select>
+						</div>
+					</div>
+
+					<div class="form-group">
+						<label for="modal-source" class="col-sm-2 control-label">线索来源</label>
+						<div class="col-sm-10" style="width: 300px;">
+							<select class="form-control" id="modal-source" v-model="modalData.source">
+								<option th:each="item:${#servletContext.getAttribute('dicMap')['source']}"
+										th:value="${item.key}" th:text="${item.value.text}">广告</option>
+							</select>
+						</div>
+					</div>
+
+
+					<div class="form-group">
+						<label for="modal-describe" class="col-sm-2 control-label">线索描述</label>
+						<div class="col-sm-10" style="width: 81%;">
+							<textarea class="form-control" rows="3" id="modal-describe" v-model="modalData.description"></textarea>
+						</div>
+					</div>
+
+					<div style="height: 1px; width: 100%; background-color: #D5D5D5; position: relative;"></div>
+
+					<div style="position: relative;top: 15px;">
+						<div class="form-group">
+							<label for="modal-contactSummary" class="col-sm-2 control-label">联系纪要</label>
+							<div class="col-sm-10" style="width: 81%;">
+								<textarea class="form-control" rows="3" id="modal-contactSummary" v-model="modalData.contactsummary"></textarea>
+							</div>
+						</div>
+						<div class="form-group">
+							<label for="modal-nextContactTime" class="col-sm-2 control-label">下次联系时间</label>
+							<div class="col-sm-10" style="width: 300px;">
+								<input type="text" class="form-control date" id="modal-nextContactTime"
+									   v-model="modalData.nextcontacttime" @click="changeVal(['modalData', 'nextcontacttime'],$event)">
+							</div>
+						</div>
+					</div>
+
+					<div style="height: 1px; width: 100%; background-color: #D5D5D5; position: relative; top : 10px;"></div>
+
+					<div style="position: relative;top: 20px;">
+						<div class="form-group">
+							<label for="modal-address" class="col-sm-2 control-label">详细地址</label>
+							<div class="col-sm-10" style="width: 81%;">
+								<textarea class="form-control" rows="1" id="modal-address" v-model="modalData.address"></textarea>
+							</div>
+						</div>
+					</div>
+					<div style="display: none">
+						<input type="reset" id="modal-reset"/>
+					</div>
+				</form>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal" id="modal-close">关闭</button>
+				<button type="button" class="btn btn-primary" @click="modalSave">保存</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div th:replace="workbench/modal/alert :: alert-modal"></div>
+<div th:replace="workbench/modal/modal :: remark-modal"></div>
+<div th:replace="workbench/modal/modal :: activity-relation-modal"></div>
+<div th:replace="workbench/modal/modal :: activity-source-modal"></div>
+
+</body>
+<script type="text/javascript" src="workbench/js/util.js"></script>
+<script type="text/javascript" src="workbench/js/remarkModal.js"></script>
+<script type="text/javascript" src="workbench/js/activityRelationModal.js"></script>
+<script type="text/javascript" src="workbench/js/activitySourceModal.js"></script>
+<script type="text/javascript">
+	var clueModal = new Vue({
+		el : "#clue-modal",
+		data : {
+			modalTitle : '',
+			modalUrl : '',
+			modalData : {
+				owner : '',
+				company : '',
+				appellation : '',
+				fullname : '',
+				job : '',
+				email : '',
+				phone : '',
+				website : '',
+				mphone : '',
+				state : '',
+				source : '',
+				description : '',
+				contactsummary : '',
+				nextcontacttime : '',
+				address : '',
+			},
+		},
+		methods : {
+			changeVal : function (keys, $event) {
+				changeModelValue(this, keys, $event);
+			},
+			isLegal : function () {
+				if (this.modalData.owner == '') {
+					alertMsg('所有者不能是空！');
+					return false;
+				}
+				if (this.modalData.name == '') {
+					alertMsg('名称不能是空！');
+					return false;
+				}
+				return true;
+			},
+			success : function () {
+
+			},
+			modalSave : function () {
+				if (!this.isLegal()) {
+					return;
+				}
+				var _this = this;
+				$.ajax({
+					url : _this.modalUrl,
+					data: _this.modalData,
+					type : 'post',
+					success : function (data) {
+						alertMsg(data.msg);
+						$(_this.$el).modal('hide');
+						if (data.success) {
+							_this.success();
+						}
+					}
+				})
+			},
+			openCreateModal : function () {
+				this.modalTitle = "创建活动";
+				this.modalUrl = "workbench/clue/create";
+				for (var key in this.modalData) {
+					this.modalData[key] = '';
+				}
+				$(this.$el).modal('show');
+			},
+			openEditModal : function (id) {
+				this.modalTitle = "修改活动";
+				this.modalUrl = "workbench/clue/update";
+				var _this = this;
+				this.modalData.id = id;
+				$.ajax({
+					url : "workbench/clue/queryById",
+					data: {id : id},
+					type : 'get',
+					success : function (data) {
+						for (var key in _this.modalData) {
+							_this.modalData[key] = data[key];
+						}
+						$(_this.$el).modal('show');
+					}
+				})
+			},
+		}
+	});
+</script>
+<script type="text/javascript" th:inline="javascript">
+	var View = {main : 1, detail : 2, convert : 3}
+	var curView = {cur : View.main};
+	var clueDetail;
+	var clueConvert;
+	var clueMain = new Vue({
+		el : "#clue-main",
+		data : {
+			info : [[${info}]],
+			curView : curView,
+			checkedNames : [],
+			checkedAll : false,
+			queryData : {
+				"fullname" : '',
+				"company" : '',
+				"phone" : '',
+				"source" : '',
+				"state" : '',
+				"owner" : '',
+				"mphone" : '',
+			},
+		},
+		computed : {
+			seen : function () {
+				return this.curView.cur == View.main;
+			},
+			offset : function () {
+				return this.info.pageNum <= 3 ? 0 : (this.info.pages - this.info.pageNum <= 2 ? this.info.pages - 5 : this.info.pageNum - 3);
+			},
+		},
+		methods : {
+			initCheck : function () {
+				this.checkedNames.length = 0;
+				this.checkedAll = false;
+			},
+			clickCheckItem : function () {
+				this.checkedAll = (this.checkedNames.length === this.info.list.length);
+			},
+			clickCheckAll : function () {
+				this.checkedNames.length = 0;
+				if (this.checkedAll) {
+					this.info.list.forEach(item=>{
+						this.checkedNames.push(item.id);
+					});
+				}
+			},
+			changeVal : function (keys, $event) {
+				changeModelValue(this, keys, $event);
+			},
+			updateTable : function (pageSize, pageNum) {
+				this.queryData.pageSize = pageSize;
+				this.queryData.pageNum = pageNum;
+				var _this = this;
+				$.ajax({
+					url : 'workbench/clue/query',
+					data: _this.queryData,
+					type : 'get',
+					success : function (data) {
+						_this.info = data;
+						_this.initCheck();
+					}
+				})
+			},
+			reflash : function () {
+				this.updateTable(this.info.pageSize, this.info.pageNum);
+			},
+			openCreateModal : function () {
+				clueModal.openCreateModal();
+				clueModal.success = this.updateTable;
+				clueModal.modalData.owner = [[${session.user.id}]];
+			},
+			openEditModal : function () {
+				if (this.checkedNames.length == 0) {
+					alertMsg("请选择要修改的数据");
+					return;
+				}
+				if (this.checkedNames.length > 1) {
+					alertMsg("一次只能修改一条数据");
+					return;
+				}
+				clueModal.openEditModal(this.checkedNames[0]);
+				clueModal.success = this.updateTable;
+			},
+			deleteData : function () {
+				if (this.checkedNames.length == 0) {
+					alertMsg('请选择需要删除的数据');
+					return;
+				}
+				if(confirm("确定删除这"+ this.checkedNames.length +"条数据？")) {
+					var _this = this;
+					$.ajax({
+						url: "workbench/clue/delete",
+						data: {ids : _this.checkedNames},
+						type: 'post',
+						success: function (data) {
+							alertMsg(data.msg);
+							if (data.success) {
+								_this.updateTable();
+							}
+						}
+					})
+				}
+			},
+			showDetail : function (id) {
+				clueDetail.id = id;
+				this.curView.cur = View.detail;
+			},
+		},
+	});
+	clueDetail = new Vue({
+		el : "#clue-detail",
+		data : {
+			id : '',
+			curView : curView,
+			remarkTitle : '线索',
+			remarkFor : '',
+			newRemark : '',
+			remarkHeight : '90px',
+			remarkBtn : false,
+			clue : {},
+			remarkList : [],
+			activityList : [],
+		},
+		computed : {
+			seen : function () {
+				return this.curView.cur == View.detail;
+			}
+		},
+		watch : {
+			id : function () {
+				var _this = this;
+				$.ajax({
+					url : "workbench/clue/detail",
+					data: {id : this.id},
+					type : 'get',
+					success : function (data) {
+						_this.clue = data.clue;
+						_this.remarkList = data.remarkList;
+						_this.activityList = data.activityList;
+						_this.remarkFor = data.clue.fullname + data.clue.appellation + "-" + data.clue.customerid;
+					}
+				})
+			}
+		},
+		methods : {
+			changeVal : function (keys, $event) {
+				changeModelValue(this, keys, $event);
+			},
+			remarkDivMouseenter : function ($event) {
+				$($event.target).children("div").children("div").show();
+			},
+			remarkDivMouseleave : function ($event) {
+				$($event.target).children("div").children("div").hide();
+			},
+			hrefMouseenter : function ($event) {
+				$($event.target).children("span").css("color","red");
+			},
+			hrefMouseleave : function ($event) {
+				$($event.target).children("span").css("color","#E6E6E6");
+			},
+			addRemark : function () {
+				this.remarkHeight = "130px";
+				this.remarkBtn = true;
+			},
+			cancelSave : function () {
+				this.newRemark = '';
+				this.remarkHeight = "90px";
+				this.remarkBtn = false;
+			},
+			// 打开修改联系人窗口
+			openEditModal : function () {
+				clueModal.openEditModal(this.id);
+				clueModal.success = this.reflash;
+			},
+			reflash : function () {
+				var _this = this;
+				$.ajax({
+					url : "workbench/clue/queryById/visible",
+					data: {id : this.id},
+					type : 'get',
+					success : function (data) {
+						_this.clue = data;
+					}
+				})
+			},
+			// 打开修改备注窗口
+			openEditRemarkModal : function (id) {
+				var _this = this;
+				for (var item of this.remarkList) {
+					if (item.id == id) {
+						remarkModal.openModal(id, item.notecontent, "workbench/clueRemark/update");
+						remarkModal.success = _this.reflashRemark;
+						break;
+					}
+				}
+			},
+			// 刷新备注表
+			reflashRemark : function () {
+				var _this = this;
+				$.ajax({
+					url : "workbench/clueRemark/queryByClueId",
+					data: {id : this.id},
+					type : 'get',
+					success : function (data) {
+						_this.remarkList = data;
+					}
+				})
+			},
+			reflashRelation : function () {
+				var _this = this;
+				$.ajax({
+					url : "workbench/clueActivityRelation/queryActivityByClueId",
+					data: {id : this.id},
+					type : 'get',
+					success : function (data) {
+						_this.activityList = data;
+					}
+				})
+			},
+			// 删除
+			deleteItem : function () {
+				if(confirm("确定删除这条数据？")) {
+					var _this = this;
+					$.ajax({
+						url: "workbench/clue/delete",
+						data: {ids : [_this.id]},
+						type: 'post',
+						success: function (data) {
+							alertMsg(data.msg);
+							if (data.success) {
+								_this.returnMain();
+							}
+						}
+					})
+				}
+			},
+			// 删除备注
+			deleteRemark : function (id) {
+				var _this = this;
+				$.ajax({
+					url : "workbench/clueRemark/delete",
+					data: {id : id},
+					type : 'post',
+					success : function (data) {
+						if (data.success) {
+							_this.reflashRemark();
+						}
+					}
+				})
+			},
+			deleteRelation : function (id) {
+				var _this = this;
+				$.ajax({
+					url : "workbench/clueActivityRelation/delete",
+					data: {id : id},
+					type : 'post',
+					success : function (data) {
+						if (data.success) {
+							_this.reflashRelation();
+						}
+					}
+				})
+			},
+			// 保存备注
+			saveRemark : function () {
+				var _this = this;
+				$.ajax({
+					url : "workbench/clueRemark/create",
+					data: {notecontent : this.newRemark, clueid : this.id},
+					type : 'post',
+					success : function (data) {
+						if (data.success) {
+							_this.reflashRemark();
+							_this.cancelSave();
+						}
+					}
+				})
+			},
+			openConvert : function () {
+				clueConvert.clue = this.clue;
+				clueConvert.reflash();
+				this.curView.cur = View.convert;
+			},
+			openRelationModal : function () {
+				activityRelationModal.success = this.reflashRelation;
+				activityRelationModal.openModal(this.id,
+						"workbench/clueActivityRelation/queryUnRelationActivityByClueId",
+						"workbench/clueActivityRelation/create");
+			},
+			// 返回主界面
+			returnMain : function () {
+				clueMain.reflash();
+				this.curView.cur = View.main;
+			},
+		}
+	});
+	clueConvert = new Vue({
+		el : "#clue-convert",
+		data : {
+			clue : {},
+			curView : curView,
+			activityName : '',
+			tranData : {
+				clueId : '',
+				hasTran : false,
+				money : '',
+				name : '',
+				expecteddate : '',
+				stage : '',
+				activityid : '',
+			}
+		},
+		watch : {
+			clue : function () {
+				this.tranData.clueId = this.clue.id;
+			}
+		},
+		computed : {
+			seen : function () {
+				return this.curView.cur == View.convert;
+			},
+		},
+		methods : {
+			changeVal: function (keys, $event) {
+				changeModelValue(this, keys, $event);
+			},
+			returnMain : function () {
+				this.curView.cur = View.detail;
+			},
+			reflash : function () {
+				this.tranData.hasTran = false;
+				this.tranData.name = this.clue.company + '-';
+				this.tranData.money = '';
+				this.tranData.expecteddate = '';
+				this.tranData.stage = '';
+				this.tranData.activityid = '';
+				this.activityName = '';
+			},
+			openSourceModal : function () {
+				var _this = this;
+				activitySourceModal.success = function () {
+					_this.activityName = activitySourceModal.activity.name;
+					_this.tranData.activityid = activitySourceModal.activity.id;
+				};
+				activitySourceModal.openModal();
+			},
+			saveConvert : function () {
+				var _this = this;
+				$.ajax({
+					url : "workbench/clue/saveConvert",
+					data: this.tranData,
+					type : 'post',
+					success : function (data) {
+						alertMsg(data.msg);
+						if (data.success) {
+							clueMain.reflash();
+							_this.curView.cur = View.main;
+						}
+					}
+				})
+			},
+		}
+	})
+</script>
+</html>

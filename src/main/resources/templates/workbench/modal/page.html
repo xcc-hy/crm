@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>$Title$</title>
+</head>
+<body>
+<!--分页栏-->
+<div th:fragment="bottom-btn" style="height: 50px; position: relative;top: 30px;">
+  <div>
+    <button type="button" class="btn btn-default" style="cursor: default;">共<b th:text="${info.total}">50</b>条记录</button>
+  </div>
+  <div class="btn-group" style="position: relative;top: -34px; left: 110px;">
+    <button type="button" class="btn btn-default" style="cursor: default;">显示</button>
+    <div class="btn-group">
+      <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+        <b th:text="${info.pageSize}" id="page-size">10</b>
+        <span class="caret"></span>
+      </button>
+      <ul class="dropdown-menu" role="menu">
+        <li><a href="javascript:queryUtil.queryWithPageSize(10)">10</a></li>
+        <li><a href="javascript:queryUtil.queryWithPageSize(20)">20</a></li>
+        <li><a href="javascript:queryUtil.queryWithPageSize(30)">30</a></li>
+      </ul>
+    </div>
+    <button type="button" class="btn btn-default" style="cursor: default;">条/页</button>
+  </div>
+  <div style="position: relative;top: -88px; left: 285px;">
+    <nav>
+      <ul class="pagination">
+        <li><a href="javascript:queryUtil.queryWithPageNum(1)">首页</a></li>
+        <li th:class="${info.isFirstPage ? 'disabled' : ''}">
+          <a th:href="'javascript:queryUtil.queryWithPageNum(' + ${info.prePage} + ')'">上一页</a>
+        </li>
+        <li th:each="i:${#numbers.sequence(info.pageNum - 4,info.pageNum + 4)}"
+            th:if="${i > 0 && i <= info.pages}" th:class="${i == info.pageNum ? 'active' : ''}">
+          <a th:href="'javascript:queryUtil.queryWithPageNum(' + ${i} + ')'" th:text="${i}">1</a>
+        </li>
+        <li th:class="${info.isLastPage ? 'disabled' : ''}">
+          <a th:href="'javascript:queryUtil.queryWithPageNum(' + ${info.nextPage} + ')'">下一页</a>
+        </li>
+        <li><a th:href="'javascript:queryUtil.queryWithPageNum(' + ${info.pages} + ')'">末页</a></li>
+        <li style="display: none" id="page-num" th:text="${info.pageNum}"></li>
+      </ul>
+    </nav>
+  </div>
+</div>
+
+<div th:fragment="vue-page">
+  <div>
+    <button type="button" class="btn btn-default" style="cursor: default;">共<b>{{info.total}}</b>条记录</button>
+  </div>
+  <div class="btn-group" style="position: relative;top: -34px; left: 110px;">
+    <button type="button" class="btn btn-default" style="cursor: default;">显示</button>
+    <div class="btn-group">
+      <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+        {{info.pageSize}}
+        <span class="caret"></span>
+      </button>
+      <ul class="dropdown-menu" role="menu">
+        <li><a @click="updateTable(10, 1)">10</a></li>
+        <li><a @click="updateTable(20, 1)">20</a></li>
+        <li><a @click="updateTable(30, 1)">30</a></li>
+      </ul>
+    </div>
+    <button type="button" class="btn btn-default" style="cursor: default;">条/页</button>
+  </div>
+  <div style="position: relative;top: -88px; left: 285px;">
+    <nav>
+      <ul class="pagination">
+        <li><a @click="updateTable(info.pageSize, 1)">首页</a></li>
+        <li :class="{disabled : info.isFirstPage}"><a @click="updateTable(info.pageSize, info.prePage)">上一页</a></li>
+        <li v-for="i in 5"
+            v-if="i + offset > 0 && i + offset <= info.pages"
+            :class="{active:i + offset == info.pageNum}">
+          <a @click="updateTable(info.pageSize, i + offset)">{{i + offset}}</a>
+        </li>
+        <li :class="{disabled : info.isLastPage}"><a @click="updateTable(info.pageSize, info.nextPage)">下一页</a></li>
+        <li><a @click="updateTable(info.pageSize, info.pages)">末页</a></li>
+      </ul>
+    </nav>
+  </div>
+</div>
+
+</body>
+</html>
+
